@@ -1,0 +1,238 @@
+[
+    {
+        "name": "Ali",
+        "university": "NUST",
+        "degree": "CS",
+        "semester": "5",
+        "gpa": "3.5",
+        "preferences": "AI, internships",
+        "financial_need": "High",
+        "past_experience": "Python, ML projects"
+    },
+    {
+        "name": "anamta",
+        "university": "fast university",
+        "degree": "bscs",
+        "semester": "5",
+        "gpa": "3.4",
+        "preferences": "Ai,ML",
+        "financial_need": "Medium",
+        "past_experience": "none"
+    },
+    {
+        "name": "hafsa",
+        "university": "minhaj university  lahore",
+        "degree": "bs nutritionist",
+        "semester": "3",
+        "gpa": "3.8",
+        "preferences": "nurse",
+        "financial_need": "Medium",
+        "past_experience": ""
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "",
+        "semester": "",
+        "gpa": "yugj",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": ""
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "",
+        "semester": "",
+        "gpa": "yugj",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": ""
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "",
+        "semester": "",
+        "gpa": "yugj",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": ""
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "",
+        "semester": "",
+        "gpa": "yugj",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": ""
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "66",
+        "semester": "",
+        "gpa": "yugj",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": ""
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "66",
+        "semester": "jkj",
+        "gpa": "yugj",
+        "preferences": "",
+        "financial_need": "Low",
+        "past_experience": ""
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "66",
+        "semester": "jkj",
+        "gpa": "yugj",
+        "preferences": "",
+        "financial_need": "Low",
+        "past_experience": "jij"
+    },
+    {
+        "name": "111",
+        "university": "",
+        "degree": "66",
+        "semester": "jkj",
+        "gpa": "yugj",
+        "preferences": "",
+        "financial_need": "Low",
+        "past_experience": "jij"
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "",
+        "semester": "",
+        "gpa": "",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": "56"
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "66",
+        "semester": "",
+        "gpa": "",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": "56"
+    },
+    {
+        "name": "Anamta Gohar",
+        "university": "",
+        "degree": "66",
+        "semester": "",
+        "gpa": "",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": "56"
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "66",
+        "semester": "",
+        "gpa": "",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": "56"
+    },
+    {
+        "name": "",
+        "university": "",
+        "degree": "bs urdu",
+        "semester": "",
+        "gpa": "77",
+        "preferences": "",
+        "financial_need": "",
+        "past_experience": "56"
+    },
+    {
+        "name": "zoha",
+        "university": "minhaj university lahore",
+        "degree": "BSCS",
+        "semester": "4",
+        "gpa": "3.7",
+        "preferences": "AI,ML,DL",
+        "financial_need": "Medium",
+        "past_experience": "in python,c++, web dev"
+    },
+    {
+        "name": "hazira",
+        "university": "minhaj university lahore",
+        "degree": "BSCS",
+        "semester": "5",
+        "gpa": "3.4",
+        "preferences": "ML,DL,Web development",
+        "financial_need": "Medium",
+        "past_experience": "python,c++,saas"
+    },
+    {
+        "name": "zoha",
+        "university": "minhaj university lahore",
+        "degree": "bsit",
+        "semester": "5",
+        "gpa": "3.67",
+        "preferences": "ML,DL,Web development",
+        "financial_need": "Medium",
+        "past_experience": "python,html,css,"
+    },
+    {
+        "name": "zoha",
+        "university": "minhaj university lahore",
+        "degree": "bsit",
+        "semester": "5",
+        "gpa": "3.67",
+        "preferences": "ML,DL,Web development",
+        "financial_need": "Medium",
+        "past_experience": "python,html,css,"
+    },
+    {
+        "name": "gohar",
+        "university": "minhaj university lahore",
+        "degree": "bsit",
+        "semester": "5",
+        "gpa": "3.67",
+        "preferences": "ML,DL,Web development",
+        "financial_need": "Medium",
+        "past_experience": "python,html,css,"
+    },
+    {
+        "accountEmail": "anamta.gohar25@gmail.com",
+        "fullName": "Anamta Gohar",
+        "email": "anamta.gohar25@gmail.com",
+        "phone": "03284357188",
+        "city": "LAHORE",
+        "university": "minhaj university lahore",
+        "degree": "BSCS",
+        "gpa": "3.67",
+        "progressType": "semester",
+        "semester": "5",
+        "gradYear": "2027",
+        "skills": "python,react,js,html,css,saas",
+        "interests": "basketball,england,Msc",
+        "certifications": "pitman",
+        "experience": "emora,essora,ml,ai",
+        "lookingFor": "Internships",
+        "mode": "Hybrid",
+        "location": "lahore",
+        "industry": "ai",
+        "careerGoals": "Ai engineer,Ml engineer",
+        "linkedin": "",
+        "portfolio": "",
+        "resumeName": "",
+        "savedAt": "2026-05-01T15:00:34.476Z"
+    }
+]
