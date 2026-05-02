@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Madadgar Auth</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            madadgar: {
+              blue: "#0A66C2",
+              dark: "#063B73",
+              light: "#EAF4FF"
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-madadgar-light via-white to-blue-100 flex items-center justify-center px-4">
+
+  <div class="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-blue-100">
+
+    <!-- Brand -->
+    <div class="text-center mb-6">
+      <h1 class="text-5xl font-bold text-madadgar-blue mb-2" dir="rtl">
+        مددگار
+      </h1>
+      <p class="text-gray-500 text-sm">
+        Your AI student companion
+      </p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex mb-6 bg-gray-100 rounded-xl p-1">
+      <button id="loginTab" onclick="showForm('login')" 
+        class="w-1/2 py-2 rounded-lg font-semibold bg-white shadow text-madadgar-blue">
+        Login
+      </button>
+      <button id="signupTab" onclick="showForm('signup')" 
+        class="w-1/2 py-2 rounded-lg font-semibold text-gray-500">
+        Sign Up
+      </button>
+    </div>
+
+    <!-- ================= LOGIN FORM ================= -->
+    <form id="loginForm" method="POST" action="/login" class="space-y-5">
+
+      <div>
+        <label class="block text-sm mb-2">Email</label>
+        <input type="email" name="email" required
+          placeholder="Enter email"
+          class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm mb-2">Password</label>
+        <input type="password" name="password" required
+          placeholder="Enter password"
+          class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+      </div>
+
+      <div class="flex justify-between text-sm">
+        <label class="flex items-center gap-2">
+          <input type="checkbox"> Remember
+        </label>
+        <a href="#" class="text-madadgar-blue">Forgot?</a>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-madadgar-blue text-white py-3 rounded-xl hover:bg-madadgar-dark transition">
+        Login
+      </button>
+    </form>
+
+    <!-- ================= SIGNUP FORM ================= -->
+    <form id="signupForm" method="POST" action="/signup" class="space-y-5 hidden">
+
+      <div>
+        <label class="block text-sm mb-2">Full Name</label>
+        <input type="text" name="name" required
+          placeholder="Enter name"
+          class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm mb-2">Email</label>
+        <input type="email" name="email" required
+          placeholder="Enter email"
+          class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+      </div>
+
+      <div>
+        <label class="block text-sm mb-2">Password</label>
+        <input type="password" name="password" required
+          placeholder="Create password"
+          class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+      </div>
+
+      <button type="submit"
+        class="w-full bg-madadgar-blue text-white py-3 rounded-xl hover:bg-madadgar-dark transition">
+        Create Account
+      </button>
+    </form>
+
+  </div>
+
+  <!-- ================= JS ================= -->
+  <script>
+    function showForm(type) {
+      const loginForm = document.getElementById("loginForm");
+      const signupForm = document.getElementById("signupForm");
+
+      const loginTab = document.getElementById("loginTab");
+      const signupTab = document.getElementById("signupTab");
+
+      if (type === "login") {
+        loginForm.classList.remove("hidden");
+        signupForm.classList.add("hidden");
+
+        loginTab.classList.add("bg-white", "shadow", "text-madadgar-blue");
+        signupTab.classList.remove("bg-white", "shadow", "text-madadgar-blue");
+        signupTab.classList.add("text-gray-500");
+
+      } else {
+        signupForm.classList.remove("hidden");
+        loginForm.classList.add("hidden");
+
+        signupTab.classList.add("bg-white", "shadow", "text-madadgar-blue");
+        loginTab.classList.remove("bg-white", "shadow", "text-madadgar-blue");
+        loginTab.classList.add("text-gray-500");
+      }
+    }
+  </script>
+
+</body>
+</html>

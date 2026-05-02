@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+
+  <title>Madadgar Responsive</title>
+
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='imgs/logob.ico') }}">
+
+  <style>
+    :root {
+      --blue: #0A66C2;
+      --blue-dark: #063B73;
+      --blue-soft: #EAF4FF;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #dbeafe;
+      --white: #ffffff;
+      --shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
+      --radius: 24px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(10, 102, 194, 0.18), transparent 34%),
+        linear-gradient(180deg, #EAF4FF 0%, #ffffff 45%, #f8fafc 100%);
+      color: var(--text);
+      padding-bottom: 82px;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    /* ================= NAVBAR ================= */
+
+    .top-navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 9999;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      height: 64px;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand img {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand-text h1 {
+      color: var(--blue);
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    .brand-text p {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+      white-space: nowrap;
+    }
+
+    .desktop-links {
+      display: none;
+      align-items: center;
+      gap: 26px;
+      color: #4b5563;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .desktop-links a:hover {
+      color: var(--blue);
+    }
+
+    .desktop-right {
+      display: none;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .profile-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: var(--blue);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 22px rgba(10, 102, 194, 0.24);
+      flex-shrink: 0;
+    }
+
+    /* IMPORTANT: hamburger is NOT hidden at 768px */
+    .menu-button {
+      width: 46px;
+      height: 46px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      border-radius: 15px;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      flex-shrink: 0;
+      z-index: 10001;
+    }
+
+    .menu-button span {
+      display: block;
+      width: 23px;
+      height: 2.5px;
+      background: var(--blue);
+      border-radius: 999px;
+      transition: transform 0.25s ease, opacity 0.25s ease;
+    }
+
+    .menu-button.open span:nth-child(1) {
+      transform: translateY(7.5px) rotate(45deg);
+    }
+
+    .menu-button.open span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .menu-button.open span:nth-child(3) {
+      transform: translateY(-7.5px) rotate(-45deg);
+    }
+
+    .mobile-menu {
+      position: fixed;
+      top: 64px;
+      left: 0;
+      right: 0;
+      z-index: 9998;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 24px 50px rgba(15, 23, 42, 0.12);
+      transform: translateY(-110%);
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 0.28s ease, opacity 0.25s ease;
+    }
+
+    .mobile-menu.open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mobile-menu-content {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      gap: 9px;
+    }
+
+    .mobile-menu a {
+      min-height: 48px;
+      border-radius: 16px;
+      padding: 0 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 15px;
+      font-weight: 750;
+      color: #374151;
+      background: #f8fafc;
+      border: 1px solid #eef2ff;
+    }
+
+    .mobile-menu a.primary {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: var(--blue);
+    }
+
+    .mobile-menu a.danger {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    .menu-backdrop {
+      position: fixed;
+      inset: 64px 0 0 0;
+      z-index: 9997;
+      background: rgba(15, 23, 42, 0.25);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .menu-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ================= PAGE ================= */
+
+    main {
+      padding-top: 80px;
+    }
+
+    .section {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 30px;
+      padding: 26px 18px;
+      color: white;
+      background:
+        radial-gradient(ellipse 80% 80% at 100% 0%, rgba(45,131,217,0.55), transparent 60%),
+        radial-gradient(ellipse 70% 70% at 0% 100%, rgba(5,42,82,0.7), transparent 65%),
+        linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      width: 170px;
+      height: 170px;
+      top: -70px;
+      right: -70px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      filter: blur(8px);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 210px;
+      height: 210px;
+      bottom: -95px;
+      left: -95px;
+      border-radius: 999px;
+      background: rgba(147, 197, 253, 0.18);
+      filter: blur(10px);
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 22px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: fit-content;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      font-size: 12px;
+      color: #dbeafe;
+      margin-bottom: 16px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: #86efac;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .hero h2 {
+      font-size: clamp(34px, 10vw, 62px);
+      line-height: 1.03;
+      letter-spacing: -0.06em;
+      font-weight: 950;
+      max-width: 720px;
+    }
+
+    .hero p {
+      color: #dbeafe;
+      font-size: 14px;
+      line-height: 1.7;
+      margin-top: 15px;
+      max-width: 560px;
+    }
+
+    .hero-actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .hero-actions a {
+      min-height: 48px;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 850;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-white {
+      background: white;
+      color: var(--blue);
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.10);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.20);
+    }
+
+    .preview-card {
+      background: white;
+      color: var(--text);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.28);
+    }
+
+    .preview-top {
+      height: 48px;
+      padding: 0 16px;
+      border-bottom: 1px solid #f1f5f9;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .traffic {
+      display: flex;
+      gap: 7px;
+    }
+
+    .traffic span {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+
+    .traffic span:nth-child(1) { background: #fca5a5; }
+    .traffic span:nth-child(2) { background: #fde68a; }
+    .traffic span:nth-child(3) { background: #86efac; }
+
+    .preview-label {
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .preview-item {
+      display: flex;
+      gap: 12px;
+      padding: 15px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .preview-item:last-child {
+      border-bottom: none;
+    }
+
+    .bar {
+      width: 6px;
+      border-radius: 999px;
+      flex-shrink: 0;
+    }
+
+    .bar.red { background: #ef4444; }
+    .bar.orange { background: #f59e0b; }
+    .bar.gray { background: #94a3b8; }
+
+    .preview-item small {
+      display: block;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .preview-item h4 {
+      font-size: 14px;
+      font-weight: 850;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .preview-item p {
+      color: #64748b;
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .red-text { color: #ef4444; }
+    .orange-text { color: #f59e0b; }
+    .gray-text { color: #64748b; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat-card,
+    .action-card,
+    .info-card {
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(10, 102, 194, 0.12);
+      box-shadow: var(--shadow);
+    }
+
+    .stat-card {
+      border-radius: 20px;
+      padding: 14px 8px;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .stat-card strong {
+      display: block;
+      font-size: 21px;
+      font-weight: 950;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 6px;
+      line-height: 1.2;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 24px 0 12px;
+    }
+
+    .section-title h3 {
+      font-size: 22px;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .actions-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .action-card {
+      border-radius: 24px;
+      padding: 17px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .action-card:active {
+      transform: scale(0.98);
+    }
+
+    .icon-box {
+      width: 50px;
+      height: 50px;
+      border-radius: 18px;
+      background: #eff6ff;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .action-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .action-content h4 {
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .action-content p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 4px;
+      line-height: 1.45;
+    }
+
+    .arrow {
+      color: var(--blue);
+      font-weight: 950;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .info-grid {
+      display: grid;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .info-card {
+      border-radius: 24px;
+      padding: 20px;
+    }
+
+    .info-card h3 {
+      font-size: 19px;
+      font-weight: 950;
+      letter-spacing: -0.03em;
+    }
+
+    .info-card p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      margin-top: 10px;
+    }
+
+    .info-mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .mini {
+      background: #eff6ff;
+      border-radius: 18px;
+      padding: 13px;
+    }
+
+    .mini strong {
+      color: var(--blue);
+      display: block;
+      font-size: 13px;
+    }
+
+    .mini span {
+      color: var(--muted);
+      display: block;
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .primary-button {
+      margin-top: 16px;
+      display: inline-flex;
+      min-height: 45px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      border-radius: 16px;
+      background: var(--blue);
+      color: white;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    /* ================= BOTTOM NAV ================= */
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 68px;
+      z-index: 9000;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -16px 35px rgba(15, 23, 42, 0.12);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .bottom-nav a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .bottom-nav a.active {
+      color: var(--blue);
+    }
+
+    /* ================= RESPONSIVE BREAKPOINTS ================= */
+
+    /* Very small phones: 320px */
+    @media (max-width: 360px) {
+      .nav-inner {
+        padding: 0 10px;
+      }
+
+      .brand img {
+        width: 38px;
+        height: 38px;
+      }
+
+      .brand-text h1 {
+        font-size: 16px;
+      }
+
+      .brand-text p {
+        font-size: 10px;
+      }
+
+      .menu-button {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+      }
+
+      .hero {
+        padding: 22px 15px;
+        border-radius: 24px;
+      }
+
+      .hero h2 {
+        font-size: 31px;
+      }
+
+      .hero p {
+        font-size: 13px;
+      }
+
+      .stat-card {
+        padding: 12px 5px;
+      }
+
+      .stat-card strong {
+        font-size: 18px;
+      }
+
+      .stat-card span {
+        font-size: 9px;
+      }
+
+      .action-card {
+        padding: 14px;
+        gap: 11px;
+      }
+
+      .icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 15px;
+      }
+
+      .action-content h4 {
+        font-size: 14px;
+      }
+
+      .action-content p {
+        font-size: 12px;
+      }
+    }
+
+    /* Large mobile */
+    @media (min-width: 480px) {
+      .section {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      .hero {
+        padding: 34px 28px;
+      }
+
+      .hero-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Tablet 768px included: hamburger STILL appears */
+    @media (min-width: 768px) {
+      .nav-inner {
+        height: 70px;
+        padding: 0 24px;
+      }
+
+      .mobile-menu {
+        top: 70px;
+      }
+
+      .menu-backdrop {
+        inset: 70px 0 0 0;
+      }
+
+      main {
+        padding-top: 92px;
+      }
+
+      .hero {
+        padding: 46px 38px;
+        border-radius: 36px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1.05fr 0.95fr;
+        align-items: center;
+        gap: 32px;
+      }
+
+      .hero-actions {
+        display: flex;
+      }
+
+      .hero-actions a {
+        padding-left: 24px;
+        padding-right: 24px;
+      }
+
+      .actions-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .action-card {
+        flex-direction: column;
+        align-items: flex-start;
+        min-height: 210px;
+      }
+
+      .arrow {
+        margin-top: auto;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .bottom-nav {
+        display: none;
+      }
+
+      body {
+        padding-bottom: 0;
+      }
+    }
+
+    /* Desktop: desktop links show, hamburger remains visible too */
+    @media (min-width: 960px) {
+      .desktop-links,
+      .desktop-right {
+        display: flex;
+      }
+
+      .menu-button {
+        display: flex !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="top-navbar">
+    <div class="nav-inner">
+
+      <a href="/" class="brand">
+        <img src="{{ url_for('static', filename='imgs/logob.ico') }}" alt="Madadgar Logo">
+        <div class="brand-text">
+          <h1>Madadgar</h1>
+          <p>Student AI Advisor</p>
+        </div>
+      </a>
+
+      <nav class="desktop-links">
+        <a href="/">Home</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/chatbot">Chatbot</a>
+        <a href="/profile">Profile</a>
+        <a href="/connect-gmail">Gmail</a>
+      </nav>
+
+      <div class="desktop-right">
+        <a href="{% if user_email %}/profile{% else %}/login{% endif %}" class="profile-circle" aria-label="Profile">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+            <path d="M12 12a5 5 0 100-10 5 5 0 000 10zM4 20a8 8 0 0116 0"
+                  stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </a>
+
+        <a href="/logout" style="font-size: 14px; color: #6b7280; font-weight: 700;">Logout</a>
+      </div>
+
+      <!-- 3 LINE BUTTON - visible on 320px, 375px, 425px, 768px, and desktop -->
+      <button id="menuBtn" class="menu-button" type="button" aria-label="Open menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+  </header>
+
+  <div id="menuBackdrop" class="menu-backdrop"></div>
+
+  <nav id="mobileMenu" class="mobile-menu">
+    <div class="mobile-menu-content">
+      <a href="/" class="menu-link primary">
+        <span>Home</span>
+        <span>→</span>
+      </a>
+
+      <a href="/dashboard" class="menu-link">
+        <span>Dashboard</span>
+        <span>→</span>
+      </a>
+
+      <a href="/chatbot" class="menu-link">
+        <span>Chatbot</span>
+        <span>→</span>
+      </a>
+
+      <a href="{% if user_email %}/profile{% else %}/login{% endif %}" class="menu-link">
+        <span>Profile</span>
+        <span>→</span>
+      </a>
+
+      <a href="/connect-gmail" class="menu-link">
+        <span>Connect Gmail</span>
+        <span>→</span>
+      </a>
+
+      <a href="/logout" class="menu-link danger">
+        <span>Logout</span>
+        <span>→</span>
+      </a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- HERO -->
+    <section class="section">
+      <div class="hero">
+        <div class="hero-grid">
+
+          <div>
+            <div class="eyebrow">
+              <span class="dot"></span>
+              Smart email triage for students
+            </div>
+
+            <h2>Your student inbox, finally handled.</h2>
+
+            <p>
+              Rank scholarships, internships, deadlines, and important emails based on your profile.
+              Built for mobile screens from 320px up to tablets and desktops.
+            </p>
+
+            <div class="hero-actions">
+              <a href="/dashboard" class="btn-white">Open Dashboard</a>
+              <a href="/chatbot" class="btn-outline">Ask Advisor</a>
+            </div>
+          </div>
+
+          <div class="preview-card">
+            <div class="preview-top">
+              <div class="traffic">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+
+              <div class="preview-label">Triage Preview</div>
+            </div>
+
+            <div class="preview-item">
+              <div class="bar red"></div>
+              <div style="min-width: 0;">
+                <small class="red-text">Act Today</small>
+                <h4>Scholarship deadline</h4>
+                <p>Apply before the deadline and submit your required documents.</p>
+              </div>
+            </div>
+
+            <div class="preview-item">
+              <div class="bar orange"></div>
+              <div style="min-width: 0;">
+                <small class="orange-text">This Week</small>
+                <h4>Internship confirmation</h4>
+                <p>Confirm your slot for the interview before the end of the week.</p>
+              </div>
+            </div>
+
+            <div class="preview-item">
+              <div class="bar gray"></div>
+              <div style="min-width: 0;">
+                <small class="gray-text">Can Wait</small>
+                <h4>General announcement</h4>
+                <p>Useful information, but not urgent right now.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="section">
+      <div class="stats">
+        <div class="stat-card">
+          <strong>20</strong>
+          <span>Max Inputs</span>
+        </div>
+
+        <div class="stat-card">
+          <strong>AI</strong>
+          <span>Ranking</span>
+        </div>
+
+        <div class="stat-card">
+          <strong>Gmail</strong>
+          <span>Connect</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACTIONS -->
+    <section class="section">
+      <div class="section-title">
+        <h3>Start here</h3>
+        <span>Responsive view</span>
+      </div>
+
+      <div class="actions-grid">
+
+        <a href="/connect-gmail" class="action-card">
+          <div class="icon-box">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6h16v12H4V6z" stroke="#0A66C2" stroke-width="1.7" stroke-linejoin="round"/>
+              <path d="M4 7l8 6 8-6" stroke="#0A66C2" stroke-width="1.7" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <div class="action-content">
+            <h4>Connect Gmail</h4>
+            <p>Fetch recent emails and rank important ones.</p>
+          </div>
+
+          <div class="arrow">→</div>
+        </a>
+
+        <a href="/dashboard" class="action-card">
+          <div class="icon-box">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
+              <path d="M7 3h7l4 4v14H7V3z" stroke="#0A66C2" stroke-width="1.7" stroke-linejoin="round"/>
+              <path d="M14 3v5h5" stroke="#0A66C2" stroke-width="1.7" stroke-linejoin="round"/>
+              <path d="M9 13h6M9 17h6" stroke="#0A66C2" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="action-content">
+            <h4>Analyze Manually</h4>
+            <p>Paste emails or upload screenshots.</p>
+          </div>
+
+          <div class="arrow">→</div>
+        </a>
+
+        <a href="/profile" class="action-card">
+          <div class="icon-box">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
+              <path d="M12 12a4 4 0 100-8 4 4 0 000 8z" stroke="#0A66C2" stroke-width="1.7"/>
+              <path d="M5 21a7 7 0 0114 0" stroke="#0A66C2" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="action-content">
+            <h4>Complete Profile</h4>
+            <p>Improve ranking using GPA, skills, interests, and goals.</p>
+          </div>
+
+          <div class="arrow">→</div>
+        </a>
+
+      </div>
+    </section>
+
+    <!-- INFO CARDS -->
+    <section class="section">
+      <div class="info-grid">
+
+        <div class="info-card">
+          <h3>Why this works on mobile</h3>
+          <p>
+            The navbar stays fixed, the 3-line button is always visible, cards stack cleanly,
+            and touch targets are large enough for small screens like 320px.
+          </p>
+
+          <div class="info-mini-grid">
+            <div class="mini">
+              <strong>320px Ready</strong>
+              <span>Small phone layout fixed.</span>
+            </div>
+
+            <div class="mini">
+              <strong>768px Ready</strong>
+              <span>Tablet layout included.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>Next step</h3>
+          <p>
+            Once this page looks good, reuse this same navbar in home, dashboard, profile,
+            chatbot, and login so every page has the same mobile menu.
+          </p>
+
+          <a href="/dashboard" class="primary-button">Go to Dashboard</a>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAV: mobile only, hidden at 768px+ -->
+  <nav class="bottom-nav">
+    <a href="/">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M4 10.5L12 4l8 6.5V20H4V10.5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      </svg>
+      Home
+    </a>
+
+    <a href="/dashboard" class="active">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M4 13h6V4H4v9zM14 20h6V4h-6v16zM4 20h6v-3H4v3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      </svg>
+      Dashboard
+    </a>
+
+    <a href="/chatbot">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M4 5h16v11H8l-4 4V5z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+      </svg>
+      Chat
+    </a>
+
+    <a href="{% if user_email %}/profile{% else %}/login{% endif %}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 12a4 4 0 100-8 4 4 0 000 8zM5 21a7 7 0 0114 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      Profile
+    </a>
+  </nav>
+
+  <script>
+    const menuBtn = document.getElementById("menuBtn");
+    const mobileMenu = document.getElementById("mobileMenu");
+    const menuBackdrop = document.getElementById("menuBackdrop");
+    const menuLinks = document.querySelectorAll(".menu-link");
+
+    function openMenu() {
+      menuBtn.classList.add("open");
+      mobileMenu.classList.add("open");
+      menuBackdrop.classList.add("open");
+      menuBtn.setAttribute("aria-expanded", "true");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeMenu() {
+      menuBtn.classList.remove("open");
+      mobileMenu.classList.remove("open");
+      menuBackdrop.classList.remove("open");
+      menuBtn.setAttribute("aria-expanded", "false");
+      document.body.style.overflow = "";
+    }
+
+    function toggleMenu() {
+      if (mobileMenu.classList.contains("open")) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    }
+
+    menuBtn.addEventListener("click", function (event) {
+      event.stopPropagation();
+      toggleMenu();
+    });
+
+    menuBackdrop.addEventListener("click", closeMenu);
+
+    menuLinks.forEach(function (link) {
+      link.addEventListener("click", closeMenu);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        closeMenu();
+      }
+    });
+  </script>
+
+</body>
+</html>

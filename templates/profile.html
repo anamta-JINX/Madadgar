@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='imgs/logob.ico') }}">
+  <title>Madadgar Profile</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            madadgar: {
+              blue: "#0A66C2",
+              dark: "#063B73",
+              light: "#EAF4FF"
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-madadgar-light via-white to-blue-100">
+
+<nav id="navbar"
+     class="fixed top-0 left-0 w-full z-50 transition-all duration-300"
+     style="
+       background:
+         radial-gradient(ellipse 60% 80% at 100% 0%, rgba(45,131,217,0.45), transparent 55%),
+         radial-gradient(ellipse 70% 60% at 0% 100%, rgba(5,42,82,0.6), transparent 60%),
+         linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
+       border-bottom: 1px solid rgba(255,255,255,0.1);
+     ">
+
+  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+
+    <a href="/" class="flex items-center">
+      <img src="{{ url_for('static', filename='imgs/logow.png') }}"
+           alt="Madadgar Logo"
+           class="h-20 w-auto">
+    </a>
+
+    <div class="hidden md:flex items-center gap-8 text-sm">
+      <a href="/" class="nav-link-light">Home</a>
+      <a href="/dashboard" class="nav-link-light">Dashboard</a>
+      <a href="/chatbot" class="nav-link-light">Chatbot</a>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <span id="loggedInEmailBadge"
+            class="hidden lg:inline text-xs text-white/80 bg-white/10 border border-white/20 px-3 py-2 rounded-lg">
+        Student Profile
+      </span>
+
+      <a href="/profile"
+         class="w-9 h-9 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zM4 20a8 8 0 0116 0"
+                stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </a>
+
+      <a href="/logout" class="hidden sm:inline text-sm nav-link-light">
+        Logout
+      </a>
+    </div>
+
+  </div>
+</nav>
+
+<main class="max-w-5xl mx-auto px-4 pt-28 pb-10">
+
+  <div id="gmailConnectBox" class="hidden mb-6 bg-white rounded-3xl shadow-xl border border-blue-100 p-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <p class="text-sm font-semibold text-madadgar-blue">Gmail Integration</p>
+        <h3 class="text-2xl font-bold text-gray-800 mt-1">Connect your Gmail</h3>
+        <p class="text-gray-500 mt-2 text-sm max-w-2xl">
+          Connect Gmail to let Madadgar read your latest emails, detect opportunities, and rank them according to your profile.
+        </p>
+      </div>
+
+      <a href="/connect-gmail"
+         class="bg-madadgar-blue text-white px-6 py-3 rounded-xl font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200 text-center">
+        Connect Gmail
+      </a>
+    </div>
+  </div>
+
+  <div id="formHeader" class="mb-8">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div>
+        <h2 class="text-3xl font-bold text-gray-800 mt-1">Build your personalized student profile</h2>
+        <p class="text-gray-500 mt-2">
+          This information helps Madadgar personalize chatbot guidance and rank opportunities for you.
+        </p>
+      </div>
+
+      <div class="bg-white border border-blue-100 rounded-2xl p-4 shadow-sm min-w-[220px]">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-sm font-semibold text-gray-700">Profile</span>
+          <span id="profilePercent" class="text-sm font-bold text-madadgar-blue">0% complete</span>
+        </div>
+        <div class="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
+          <div id="profileProgressBar" class="h-full bg-madadgar-blue rounded-full transition-all duration-300" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="saveStatus" class="hidden mt-4 p-4 rounded-xl text-sm font-medium"></div>
+  </div>
+
+  <form id="profileForm" novalidate class="bg-white rounded-3xl shadow-xl border border-blue-100 p-8">
+
+    <div class="grid md:grid-cols-4 gap-3 mb-8">
+      <button type="button" class="step-tab active-step" data-step-target="1">
+        <span>Step 1</span>
+        Personal Info
+      </button>
+
+      <button type="button" class="step-tab" data-step-target="2">
+        <span>Step 2</span>
+        Academic Info
+      </button>
+
+      <button type="button" class="step-tab" data-step-target="3">
+        <span>Step 3</span>
+        Skills & Goals
+      </button>
+
+      <button type="button" class="step-tab" data-step-target="4">
+        <span>Step 4</span>
+        Preferences
+      </button>
+    </div>
+
+    <section class="profile-step" data-step="1">
+      <div class="mb-6">
+        <h3 class="text-xl font-semibold text-madadgar-blue">Step 1: Personal Information</h3>
+        <p class="text-sm text-gray-500 mt-1">Basic identity details for personalized profile matching.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5">
+        <div>
+          <input id="fullName" class="input" type="text" placeholder="Full Name *">
+          <p class="error" id="fullNameError"></p>
+        </div>
+
+        <div>
+          <input id="email" class="input" type="email" placeholder="Email Address *">
+          <p class="error" id="emailError"></p>
+        </div>
+
+        <div>
+          <input id="phone" class="input" type="text" placeholder="Phone Number *">
+          <p class="error" id="phoneError"></p>
+        </div>
+
+        <div>
+          <input id="city" class="input" type="text" placeholder="City / Country *">
+          <p class="error" id="cityError"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-step hidden" data-step="2">
+      <div class="mb-6">
+        <h3 class="text-xl font-semibold text-madadgar-blue">Step 2: Academic Information</h3>
+        <p class="text-sm text-gray-500 mt-1">Madadgar uses this to check eligibility, GPA fit, semester/year fit, and academic relevance.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5">
+        <div>
+          <input id="university" class="input" type="text" placeholder="University / College *">
+          <p class="error" id="universityError"></p>
+        </div>
+
+        <div>
+          <input id="degree" class="input" type="text" placeholder="Degree / Field of Study e.g. BS Computer Science *">
+          <p class="error" id="degreeError"></p>
+        </div>
+
+        <div>
+          <input id="gpa" class="input" type="number" step="0.01" placeholder="GPA / CGPA *">
+          <p class="error" id="gpaError"></p>
+        </div>
+
+        <div>
+          <p class="text-sm font-medium text-gray-600 mb-2">Current Academic Progress *</p>
+
+          <div class="flex gap-6 mb-3">
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+              <input type="radio" name="progressType" value="semester">
+              <span>Semester</span>
+            </label>
+
+            <label class="flex items-center gap-2 cursor-pointer text-sm text-gray-700">
+              <input type="radio" name="progressType" value="year">
+              <span>Year</span>
+            </label>
+          </div>
+
+          <input id="semester" class="input" type="number" step="1" placeholder="Enter semester or year *">
+          <p class="error" id="semesterError"></p>
+        </div>
+
+        <div>
+          <input id="gradYear" class="input" type="number" step="1" placeholder="Expected Graduation Year *">
+          <p class="error" id="gradYearError"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-step hidden" data-step="3">
+      <div class="mb-6">
+        <h3 class="text-xl font-semibold text-madadgar-blue">Step 3: Skills, Experience & Goals</h3>
+        <p class="text-sm text-gray-500 mt-1">This helps the chatbot give student-specific answers and improves opportunity ranking.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5">
+        <div>
+          <textarea id="skills" class="textarea" placeholder="Skills e.g. Python, React, Communication *"></textarea>
+          <p class="error" id="skillsError"></p>
+        </div>
+
+        <div>
+          <textarea id="interests" class="textarea" placeholder="Interests e.g. AI, Web Development, Research *"></textarea>
+          <p class="error" id="interestsError"></p>
+        </div>
+
+        <div>
+          <textarea id="certifications" class="textarea" placeholder="Certifications"></textarea>
+          <p class="hint">Optional, but helpful for better ranking.</p>
+        </div>
+
+        <div>
+          <textarea id="experience" class="textarea" placeholder="Experience / Projects / Volunteer Work *"></textarea>
+          <p class="error" id="experienceError"></p>
+        </div>
+
+        <div class="md:col-span-2">
+          <textarea id="careerGoals" class="textarea h-32" placeholder="Tell us your goals, dream role, target companies, or future plans *"></textarea>
+          <p class="error" id="careerGoalsError"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="profile-step hidden" data-step="4">
+      <div class="mb-6">
+        <h3 class="text-xl font-semibold text-madadgar-blue">Step 4: Preferences & Portfolio</h3>
+        <p class="text-sm text-gray-500 mt-1">These preferences help Madadgar rank scholarships, internships, jobs, and research opportunities correctly.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-5">
+        <div>
+          <select id="lookingFor" class="input">
+            <option value="">Looking For *</option>
+            <option>Internships</option>
+            <option>Scholarships</option>
+            <option>Jobs</option>
+            <option>Research Opportunities</option>
+            <option>Competitions</option>
+          </select>
+          <p class="error" id="lookingForError"></p>
+        </div>
+
+        <div>
+          <select id="mode" class="input">
+            <option value="">Preferred Mode *</option>
+            <option>Remote</option>
+            <option>On-site</option>
+            <option>Hybrid</option>
+          </select>
+          <p class="error" id="modeError"></p>
+        </div>
+
+        <div>
+          <input id="location" class="input" type="text" placeholder="Preferred Location *">
+          <p class="error" id="locationError"></p>
+        </div>
+
+        <div>
+          <input id="industry" class="input" type="text" placeholder="Preferred Industry *">
+          <p class="error" id="industryError"></p>
+        </div>
+
+        <div>
+          <input id="linkedin" class="input" type="url" placeholder="LinkedIn Profile URL">
+          <p class="error" id="linkedinError"></p>
+        </div>
+
+        <div>
+          <input id="portfolio" class="input" type="url" placeholder="GitHub / Portfolio URL">
+          <p class="error" id="portfolioError"></p>
+        </div>
+
+        <div class="md:col-span-2">
+          <input id="resume" class="input" type="file" accept=".pdf,.doc,.docx">
+          <p class="hint">Accepted files: PDF, DOC, DOCX. Optional.</p>
+          <p class="error" id="resumeError"></p>
+        </div>
+      </div>
+    </section>
+
+    <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 pt-8 mt-8 border-t border-blue-100">
+      <a id="bottomLogoutBtn"
+         href="/logout"
+         class="hidden bg-red-500 text-white px-8 py-3 rounded-xl font-semibold hover:bg-red-600 transition shadow-lg shadow-red-200 text-center">
+        Logout
+      </a>
+
+      <div class="flex gap-3 md:ml-auto">
+        <button id="prevStepBtn"
+                type="button"
+                class="hidden px-8 py-3 rounded-xl font-semibold border border-blue-100 text-gray-600 hover:bg-blue-50 transition">
+          Back
+        </button>
+
+        <button id="nextStepBtn"
+                type="button"
+                class="bg-madadgar-blue text-white px-8 py-3 rounded-xl font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200">
+          Next
+        </button>
+
+        <button id="saveBtn"
+                type="submit"
+                class="hidden bg-madadgar-blue text-white px-8 py-3 rounded-xl font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200">
+          Save Profile
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+  <section id="profileView" class="hidden bg-white rounded-3xl shadow-xl border border-blue-100 p-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-100 pb-6 mb-8">
+      <div>
+        <p class="text-sm text-madadgar-blue font-semibold">Saved Student Profile</p>
+        <h2 id="viewFullNameTitle" class="text-3xl font-bold text-gray-800 mt-1"></h2>
+        <p id="viewDegreeTitle" class="text-gray-500 mt-1"></p>
+        <p id="viewAccountEmail" class="text-xs text-gray-400 mt-2"></p>
+      </div>
+
+      <button id="editBtn" type="button" class="bg-madadgar-blue text-white px-6 py-3 rounded-xl font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200">
+        Edit Profile
+      </button>
+    </div>
+
+    <div class="mb-8 bg-blue-50 border border-blue-100 rounded-2xl p-5">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm font-semibold text-gray-700">Profile Completion</span>
+        <span id="viewProfilePercent" class="text-sm font-bold text-madadgar-blue">0% complete</span>
+      </div>
+      <div class="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
+        <div id="viewProfileProgressBar" class="h-full bg-madadgar-blue rounded-full" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <div class="space-y-8">
+      <div>
+        <h3 class="view-section-title">Personal Information</h3>
+        <div class="view-grid">
+          <div class="view-card"><span>Full Name</span><p id="viewFullName"></p></div>
+          <div class="view-card"><span>Email</span><p id="viewEmail"></p></div>
+          <div class="view-card"><span>Phone</span><p id="viewPhone"></p></div>
+          <div class="view-card"><span>City / Country</span><p id="viewCity"></p></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="view-section-title">Academic Details</h3>
+        <div class="view-grid">
+          <div class="view-card"><span>University / College</span><p id="viewUniversity"></p></div>
+          <div class="view-card"><span>Degree / Field</span><p id="viewDegree"></p></div>
+          <div class="view-card"><span>GPA / CGPA</span><p id="viewGpa"></p></div>
+          <div class="view-card"><span>Current Progress</span><p id="viewProgress"></p></div>
+          <div class="view-card"><span>Expected Graduation</span><p id="viewGradYear"></p></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="view-section-title">Skills & Goals</h3>
+        <div class="view-grid">
+          <div class="view-card"><span>Skills</span><p id="viewSkills"></p></div>
+          <div class="view-card"><span>Interests</span><p id="viewInterests"></p></div>
+          <div class="view-card"><span>Certifications</span><p id="viewCertifications"></p></div>
+          <div class="view-card"><span>Experience / Projects</span><p id="viewExperience"></p></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="view-section-title">Career Goals</h3>
+        <div class="view-card"><p id="viewCareerGoals"></p></div>
+      </div>
+
+      <div>
+        <h3 class="view-section-title">Opportunity Preferences</h3>
+        <div class="view-grid">
+          <div class="view-card"><span>Looking For</span><p id="viewLookingFor"></p></div>
+          <div class="view-card"><span>Preferred Mode</span><p id="viewMode"></p></div>
+          <div class="view-card"><span>Preferred Location</span><p id="viewLocation"></p></div>
+          <div class="view-card"><span>Preferred Industry</span><p id="viewIndustry"></p></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="view-section-title">Resume / Portfolio</h3>
+        <div class="view-grid">
+          <div class="view-card"><span>LinkedIn</span><p id="viewLinkedin"></p></div>
+          <div class="view-card"><span>Portfolio / GitHub</span><p id="viewPortfolio"></p></div>
+          <div class="view-card"><span>Resume File</span><p id="viewResume"></p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<style>
+  .nav-link-light {
+    color: rgba(255, 255, 255, 0.78);
+    transition: color 0.2s ease;
+  }
+
+  .nav-link-light:hover {
+    color: white;
+  }
+
+  .step-tab {
+    text-align: left;
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid #dbeafe;
+    background: #f8fbff;
+    color: #334155;
+    font-weight: 700;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .step-tab span {
+    display: block;
+    font-size: 11px;
+    color: #0A66C2;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: color 0.2s ease;
+  }
+
+  .step-tab:not(.active-step):hover {
+    background: #eaf4ff;
+    border-color: #93c5fd;
+    color: #0f172a;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(10, 102, 194, 0.10);
+  }
+
+  .step-tab:not(.active-step):hover span {
+    color: #084d94;
+  }
+
+  .active-step {
+    background: #0A66C2;
+    color: white;
+    border-color: #0A66C2;
+    box-shadow: 0 14px 28px rgba(10, 102, 194, 0.18);
+  }
+
+  .active-step span {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .active-step:hover {
+    background: #084d94;
+    color: white;
+    border-color: #084d94;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 32px rgba(10, 102, 194, 0.22);
+  }
+
+  .active-step:hover span {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    outline: none;
+    background: white;
+  }
+
+  .textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 14px 16px;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    outline: none;
+    resize: vertical;
+    background: white;
+  }
+
+  .input:focus,
+  .textarea:focus {
+    border-color: #0A66C2;
+    box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.2);
+  }
+
+  .error {
+    color: #dc2626;
+    font-size: 13px;
+    margin-top: 6px;
+    min-height: 18px;
+  }
+
+  .hint {
+    color: #6b7280;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .field-error {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important;
+  }
+
+  .field-success {
+    border-color: #16a34a !important;
+  }
+
+  .view-section-title {
+    color: #0A66C2;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .view-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  @media (min-width: 768px) {
+    .view-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .view-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 18px;
+  }
+
+  .view-card span {
+    display: block;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .view-card p {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 500;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+</style>
+
+<script>
+  const form = document.getElementById("profileForm");
+  const profileView = document.getElementById("profileView");
+  const formHeader = document.getElementById("formHeader");
+  const editBtn = document.getElementById("editBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const bottomLogoutBtn = document.getElementById("bottomLogoutBtn");
+  const saveStatus = document.getElementById("saveStatus");
+  const loggedInEmailBadge = document.getElementById("loggedInEmailBadge");
+  const gmailConnectBox = document.getElementById("gmailConnectBox");
+
+  const profilePercent = document.getElementById("profilePercent");
+  const profileProgressBar = document.getElementById("profileProgressBar");
+  const viewProfilePercent = document.getElementById("viewProfilePercent");
+  const viewProfileProgressBar = document.getElementById("viewProfileProgressBar");
+
+  const prevStepBtn = document.getElementById("prevStepBtn");
+  const nextStepBtn = document.getElementById("nextStepBtn");
+
+  const SERVER_LOGGED_IN_EMAIL = "{{ user_email or '' }}";
+
+  let currentStep = 1;
+  const TOTAL_STEPS = 4;
+
+  function getValue(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  }
+
+  function setValue(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.value = value || "";
+  }
+
+  function normalizeEmail(email) {
+    return String(email || "").trim().toLowerCase();
+  }
+
+  function getLoggedInEmail(fallbackEmail = "") {
+    const email = SERVER_LOGGED_IN_EMAIL || fallbackEmail;
+    return normalizeEmail(email);
+  }
+
+  function profileBelongsToLoggedInUser(profile) {
+    const loggedInEmail = getLoggedInEmail();
+    if (!loggedInEmail || !profile) return false;
+    const profileEmail = normalizeEmail(profile.accountEmail || profile.email || "");
+    return profileEmail === loggedInEmail;
+  }
+
+  function showStatus(message, type = "success") {
+    saveStatus.classList.remove("hidden");
+
+    if (type === "success") {
+      saveStatus.className = "mt-4 p-4 rounded-xl text-sm font-medium bg-green-50 border border-green-100 text-green-700";
+    } else if (type === "warning") {
+      saveStatus.className = "mt-4 p-4 rounded-xl text-sm font-medium bg-yellow-50 border border-yellow-100 text-yellow-700";
+    } else {
+      saveStatus.className = "mt-4 p-4 rounded-xl text-sm font-medium bg-red-50 border border-red-100 text-red-700";
+    }
+
+    saveStatus.textContent = message;
+  }
+
+  function hideStatus() {
+    saveStatus.classList.add("hidden");
+    saveStatus.textContent = "";
+  }
+
+  function showError(id, message) {
+    const field = document.getElementById(id);
+    const error = document.getElementById(id + "Error");
+
+    if (field) {
+      field.classList.add("field-error");
+      field.classList.remove("field-success");
+    }
+
+    if (error) error.textContent = message;
+  }
+
+  function showSuccess(id) {
+    const field = document.getElementById(id);
+    const error = document.getElementById(id + "Error");
+
+    if (field) {
+      field.classList.remove("field-error");
+      field.classList.add("field-success");
+    }
+
+    if (error) error.textContent = "";
+  }
+
+  function isValidName(value) {
+    return /^[A-Za-z\s.'-]{2,50}$/.test(value);
+  }
+
+  function isValidText(value) {
+    return /^[A-Za-z0-9\s.,'&()/-]{2,100}$/.test(value);
+  }
+
+  function isValidParagraph(value) {
+    return value.length >= 10 && value.length <= 500;
+  }
+
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+
+  function isValidPhone(value) {
+    return /^[0-9+\-\s]{7,15}$/.test(value);
+  }
+
+  function isValidURL(value) {
+    if (value === "") return true;
+
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function updateLoggedInEmailUI() {
+    const currentEmail = getLoggedInEmail();
+
+    if (currentEmail) {
+      loggedInEmailBadge.textContent = "Logged in: " + currentEmail;
+    } else {
+      loggedInEmailBadge.textContent = "Student Profile";
+    }
+  }
+
+  function getRequiredProfileFields() {
+    return [
+      "fullName", "email", "phone", "city",
+      "university", "degree", "gpa", "semester", "gradYear",
+      "skills", "interests", "experience", "careerGoals",
+      "lookingFor", "mode", "location", "industry"
+    ];
+  }
+
+  function calculateProfileCompletion(data = null) {
+    const fields = getRequiredProfileFields();
+    let completed = 0;
+
+    fields.forEach(id => {
+      const value = data ? String(data[id] || "").trim() : getValue(id);
+      if (value) completed++;
+    });
+
+    const progressType = data
+      ? String(data.progressType || "").trim()
+      : (document.querySelector('input[name="progressType"]:checked') ? "selected" : "");
+
+    if (progressType) completed++;
+
+    const total = fields.length + 1;
+    return Math.round((completed / total) * 100);
+  }
+
+  function updateProgress(data = null) {
+    const percent = calculateProfileCompletion(data);
+
+    if (profilePercent) profilePercent.textContent = percent + "% complete";
+    if (profileProgressBar) profileProgressBar.style.width = percent + "%";
+
+    if (viewProfilePercent) viewProfilePercent.textContent = percent + "% complete";
+    if (viewProfileProgressBar) viewProfileProgressBar.style.width = percent + "%";
+  }
+
+  function showStep(step) {
+    currentStep = Math.max(1, Math.min(TOTAL_STEPS, step));
+
+    document.querySelectorAll(".profile-step").forEach(section => {
+      section.classList.toggle("hidden", Number(section.dataset.step) !== currentStep);
+    });
+
+    document.querySelectorAll(".step-tab").forEach(tab => {
+      tab.classList.toggle("active-step", Number(tab.dataset.stepTarget) === currentStep);
+    });
+
+    prevStepBtn.classList.toggle("hidden", currentStep === 1);
+    nextStepBtn.classList.toggle("hidden", currentStep === TOTAL_STEPS);
+    saveBtn.classList.toggle("hidden", currentStep !== TOTAL_STEPS);
+
+    updateProgress();
+  }
+
+  function displayValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = value && String(value).trim() !== "" ? value : "Not provided";
+  }
+
+  function collectProfileData() {
+    const progressType = document.querySelector('input[name="progressType"]:checked');
+    const resume = document.getElementById("resume");
+    const profileEmail = getValue("email");
+    const loggedInEmail = getLoggedInEmail(profileEmail);
+
+    return {
+      accountEmail: loggedInEmail,
+      fullName: getValue("fullName"),
+      email: profileEmail,
+      phone: getValue("phone"),
+      city: getValue("city"),
+
+      university: getValue("university"),
+      degree: getValue("degree"),
+      gpa: getValue("gpa"),
+      progressType: progressType ? progressType.value : "",
+      semester: getValue("semester"),
+      gradYear: getValue("gradYear"),
+
+      skills: getValue("skills"),
+      interests: getValue("interests"),
+
+      certifications: getValue("certifications"),
+      experience: getValue("experience"),
+
+      lookingFor: getValue("lookingFor"),
+      mode: getValue("mode"),
+      location: getValue("location"),
+      industry: getValue("industry"),
+
+      careerGoals: getValue("careerGoals"),
+
+      linkedin: getValue("linkedin"),
+      portfolio: getValue("portfolio"),
+      resumeName: resume.files.length > 0 ? resume.files[0].name : "",
+
+      savedAt: new Date().toISOString()
+    };
+  }
+
+  function saveProfileLocally(profileData) {
+    const emailKey = normalizeEmail(profileData.accountEmail || profileData.email);
+
+    if (!emailKey) return;
+
+    localStorage.setItem("madadgarProfile_" + emailKey, JSON.stringify(profileData));
+    localStorage.setItem("madadgarCurrentUserEmail", emailKey);
+  }
+
+  async function saveProfileToBackend(profileData) {
+    const response = await fetch("/api/profile/save", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(profileData)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || "Backend profile save failed.");
+    }
+
+    return data;
+  }
+
+  async function getProfileFromBackend() {
+    try {
+      const response = await fetch("/api/profile/me");
+      const data = await response.json();
+
+      if (response.ok && data.success && data.profile) {
+        return data.profile;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  function getSavedProfileForCurrentUser() {
+    const loggedInEmail = getLoggedInEmail();
+
+    if (!loggedInEmail) return null;
+
+    const savedData = localStorage.getItem("madadgarProfile_" + loggedInEmail);
+
+    return savedData ? JSON.parse(savedData) : null;
+  }
+
+  function clearProfileForm() {
+    const fields = [
+      "fullName", "email", "phone", "city",
+      "university", "degree", "gpa", "semester", "gradYear",
+      "skills", "interests", "certifications", "experience",
+      "lookingFor", "mode", "location", "industry",
+      "careerGoals", "linkedin", "portfolio"
+    ];
+
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+
+    document.querySelectorAll('input[name="progressType"]').forEach(radio => {
+      radio.checked = false;
+    });
+
+    const resume = document.getElementById("resume");
+    if (resume) resume.value = "";
+
+    document.querySelectorAll(".field-error").forEach(el => {
+      el.classList.remove("field-error");
+    });
+
+    document.querySelectorAll(".field-success").forEach(el => {
+      el.classList.remove("field-success");
+    });
+
+    document.querySelectorAll(".error").forEach(el => {
+      el.textContent = "";
+    });
+
+    hideStatus();
+    updateProgress();
+  }
+
+  function fillReadOnlyProfile(data) {
+    displayValue("viewFullNameTitle", data.fullName);
+    displayValue("viewDegreeTitle", data.degree);
+
+    const accountEmail = data.accountEmail || getLoggedInEmail(data.email);
+    displayValue("viewAccountEmail", accountEmail ? "Login email: " + accountEmail : "");
+
+    displayValue("viewFullName", data.fullName);
+    displayValue("viewEmail", data.email);
+    displayValue("viewPhone", data.phone);
+    displayValue("viewCity", data.city);
+
+    displayValue("viewUniversity", data.university);
+    displayValue("viewDegree", data.degree);
+    displayValue("viewGpa", data.gpa);
+    displayValue(
+      "viewProgress",
+      data.progressType
+        ? data.progressType.charAt(0).toUpperCase() + data.progressType.slice(1) + " " + data.semester
+        : ""
+    );
+    displayValue("viewGradYear", data.gradYear);
+
+    displayValue("viewSkills", data.skills);
+    displayValue("viewInterests", data.interests);
+    displayValue("viewCertifications", data.certifications);
+    displayValue("viewExperience", data.experience);
+
+    displayValue("viewLookingFor", data.lookingFor);
+    displayValue("viewMode", data.mode);
+    displayValue("viewLocation", data.location);
+    displayValue("viewIndustry", data.industry);
+
+    displayValue("viewCareerGoals", data.careerGoals);
+    displayValue("viewLinkedin", data.linkedin);
+    displayValue("viewPortfolio", data.portfolio);
+    displayValue("viewResume", data.resumeName);
+
+    updateProgress(data);
+  }
+
+  function showProfileView(data) {
+    fillReadOnlyProfile(data);
+    form.classList.add("hidden");
+    formHeader.classList.add("hidden");
+    gmailConnectBox.classList.add("hidden");
+    profileView.classList.remove("hidden");
+
+    if (bottomLogoutBtn) {
+      bottomLogoutBtn.classList.add("hidden");
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function showFormView() {
+    profileView.classList.add("hidden");
+    formHeader.classList.remove("hidden");
+    form.classList.remove("hidden");
+    gmailConnectBox.classList.remove("hidden");
+
+    if (bottomLogoutBtn) {
+      bottomLogoutBtn.classList.remove("hidden");
+    }
+
+    showStep(1);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function loadDataIntoForm(data) {
+    clearProfileForm();
+
+    setValue("fullName", data.fullName);
+    setValue("email", data.email);
+    setValue("phone", data.phone);
+    setValue("city", data.city);
+    setValue("university", data.university);
+    setValue("degree", data.degree);
+    setValue("gpa", data.gpa);
+    setValue("semester", data.semester);
+    setValue("gradYear", data.gradYear);
+    setValue("skills", data.skills);
+    setValue("interests", data.interests);
+    setValue("certifications", data.certifications);
+    setValue("experience", data.experience);
+    setValue("lookingFor", data.lookingFor);
+    setValue("mode", data.mode);
+    setValue("location", data.location);
+    setValue("industry", data.industry);
+    setValue("careerGoals", data.careerGoals);
+    setValue("linkedin", data.linkedin);
+    setValue("portfolio", data.portfolio);
+
+    if (data.progressType) {
+      const radio = document.querySelector(`input[name="progressType"][value="${data.progressType}"]`);
+      if (radio) radio.checked = true;
+    }
+
+    updateProgress();
+  }
+
+  function validateStep(step) {
+    let valid = true;
+
+    if (step === 1) {
+      const fullName = getValue("fullName");
+      const email = getValue("email");
+      const phone = getValue("phone");
+      const city = getValue("city");
+
+      if (!isValidName(fullName)) {
+        showError("fullName", "Enter a valid name. Numbers are not allowed.");
+        valid = false;
+      } else showSuccess("fullName");
+
+      if (!isValidEmail(email)) {
+        showError("email", "Enter a valid email address.");
+        valid = false;
+      } else showSuccess("email");
+
+      if (!isValidPhone(phone)) {
+        showError("phone", "Enter a valid phone number. Only digits, +, - and spaces allowed.");
+        valid = false;
+      } else showSuccess("phone");
+
+      if (!isValidText(city)) {
+        showError("city", "Enter a valid city/country.");
+        valid = false;
+      } else showSuccess("city");
+    }
+
+    if (step === 2) {
+      const university = getValue("university");
+      const degree = getValue("degree");
+      const gpa = getValue("gpa");
+      const semester = getValue("semester");
+      const gradYear = getValue("gradYear");
+      const progressType = document.querySelector('input[name="progressType"]:checked');
+
+      if (!isValidText(university)) {
+        showError("university", "Enter a valid university or college name.");
+        valid = false;
+      } else showSuccess("university");
+
+      if (!isValidText(degree)) {
+        showError("degree", "Enter a valid degree or field of study.");
+        valid = false;
+      } else showSuccess("degree");
+
+      if (gpa === "" || isNaN(gpa) || Number(gpa) < 0 || Number(gpa) > 5) {
+        showError("gpa", "GPA must be between 0.0 and 5.0.");
+        valid = false;
+      } else showSuccess("gpa");
+
+      if (!progressType) {
+        showError("semester", "Please select Semester or Year.");
+        valid = false;
+      } else if (semester === "" || !Number.isInteger(Number(semester))) {
+        showError("semester", "Only whole numbers are allowed.");
+        valid = false;
+      } else if (progressType.value === "semester" && (Number(semester) < 1 || Number(semester) > 12)) {
+        showError("semester", "Semester must be between 1 and 12.");
+        valid = false;
+      } else if (progressType.value === "year" && (Number(semester) < 1 || Number(semester) > 6)) {
+        showError("semester", "Year must be between 1 and 6.");
+        valid = false;
+      } else {
+        showSuccess("semester");
+      }
+
+      const currentYear = new Date().getFullYear();
+
+      if (
+        gradYear === "" ||
+        !Number.isInteger(Number(gradYear)) ||
+        Number(gradYear) < currentYear ||
+        Number(gradYear) > currentYear + 10
+      ) {
+        showError("gradYear", "Enter a valid graduation year using whole numbers only.");
+        valid = false;
+      } else showSuccess("gradYear");
+    }
+
+    if (step === 3) {
+      const skills = getValue("skills");
+      const interests = getValue("interests");
+      const experience = getValue("experience");
+      const careerGoals = getValue("careerGoals");
+
+      if (!isValidParagraph(skills)) {
+        showError("skills", "Please enter your skills. Minimum 10 characters.");
+        valid = false;
+      } else showSuccess("skills");
+
+      if (!isValidParagraph(interests)) {
+        showError("interests", "Please enter your interests. Minimum 10 characters.");
+        valid = false;
+      } else showSuccess("interests");
+
+      if (!isValidParagraph(experience)) {
+        showError("experience", "Please enter your experience or projects. Minimum 10 characters.");
+        valid = false;
+      } else showSuccess("experience");
+
+      if (!isValidParagraph(careerGoals)) {
+        showError("careerGoals", "Please describe your career goals. Minimum 10 characters.");
+        valid = false;
+      } else showSuccess("careerGoals");
+    }
+
+    if (step === 4) {
+      const lookingFor = getValue("lookingFor");
+      const mode = getValue("mode");
+      const location = getValue("location");
+      const industry = getValue("industry");
+      const linkedin = getValue("linkedin");
+      const portfolio = getValue("portfolio");
+      const resume = document.getElementById("resume");
+
+      if (lookingFor === "") {
+        showError("lookingFor", "Please select what you are looking for.");
+        valid = false;
+      } else showSuccess("lookingFor");
+
+      if (mode === "") {
+        showError("mode", "Please select your preferred mode.");
+        valid = false;
+      } else showSuccess("mode");
+
+      if (!isValidText(location)) {
+        showError("location", "Enter a valid preferred location.");
+        valid = false;
+      } else showSuccess("location");
+
+      if (!isValidText(industry)) {
+        showError("industry", "Enter a valid industry.");
+        valid = false;
+      } else showSuccess("industry");
+
+      if (!isValidURL(linkedin)) {
+        showError("linkedin", "Enter a valid LinkedIn URL or leave it empty.");
+        valid = false;
+      } else showSuccess("linkedin");
+
+      if (!isValidURL(portfolio)) {
+        showError("portfolio", "Enter a valid portfolio/GitHub URL or leave it empty.");
+        valid = false;
+      } else showSuccess("portfolio");
+
+      if (resume.files.length > 0) {
+        const file = resume.files[0];
+
+        const allowedTypes = [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+          showError("resume", "Only PDF, DOC, or DOCX files are allowed.");
+          valid = false;
+        } else if (file.size > 5 * 1024 * 1024) {
+          showError("resume", "File size must be less than 5MB.");
+          valid = false;
+        } else {
+          showSuccess("resume");
+        }
+      } else {
+        const resumeError = document.getElementById("resumeError");
+        if (resumeError) resumeError.textContent = "";
+      }
+    }
+
+    updateProgress();
+    return valid;
+  }
+
+  function validateForm() {
+    let valid = true;
+
+    for (let step = 1; step <= TOTAL_STEPS; step++) {
+      const stepValid = validateStep(step);
+      if (!stepValid) valid = false;
+    }
+
+    return valid;
+  }
+
+  document.querySelectorAll(".step-tab").forEach(tab => {
+    tab.addEventListener("click", function () {
+      showStep(Number(this.dataset.stepTarget));
+    });
+  });
+
+  prevStepBtn.addEventListener("click", function () {
+    showStep(currentStep - 1);
+  });
+
+  nextStepBtn.addEventListener("click", function () {
+    if (!validateStep(currentStep)) {
+      showStatus("Please complete this step before continuing.", "error");
+      return;
+    }
+
+    hideStatus();
+    showStep(currentStep + 1);
+  });
+
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    el.addEventListener("input", () => updateProgress());
+    el.addEventListener("change", () => updateProgress());
+  });
+
+  form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      showStatus("Please fix the highlighted fields before saving.", "error");
+      return;
+    }
+
+    const profileData = collectProfileData();
+
+    if (!profileData.accountEmail) {
+      showStatus("No login email found. Please login first, then save your profile.", "error");
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+    showStatus("Saving your profile locally and to backend...", "warning");
+
+    saveProfileLocally(profileData);
+
+    try {
+      await saveProfileToBackend(profileData);
+      showStatus("Profile saved successfully. Chatbot can now use this profile for personalized answers.", "success");
+    } catch (error) {
+      showStatus("Profile saved in browser, but backend save failed. Error: " + error.message, "warning");
+    }
+
+    showProfileView(profileData);
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save Profile";
+  });
+
+  editBtn.addEventListener("click", function () {
+    const savedProfile = getSavedProfileForCurrentUser();
+
+    if (savedProfile && profileBelongsToLoggedInUser(savedProfile)) {
+      loadDataIntoForm(savedProfile);
+    }
+
+    showFormView();
+  });
+
+  window.addEventListener("load", async function () {
+    updateLoggedInEmailUI();
+
+    const loggedInEmail = getLoggedInEmail();
+
+    clearProfileForm();
+
+    if (loggedInEmail) {
+      setValue("email", loggedInEmail);
+    }
+
+    const backendProfile = await getProfileFromBackend();
+
+    if (backendProfile && profileBelongsToLoggedInUser(backendProfile)) {
+      saveProfileLocally(backendProfile);
+      loadDataIntoForm(backendProfile);
+      showProfileView(backendProfile);
+      return;
+    }
+
+    const savedProfile = getSavedProfileForCurrentUser();
+
+    if (savedProfile && profileBelongsToLoggedInUser(savedProfile)) {
+      loadDataIntoForm(savedProfile);
+      showProfileView(savedProfile);
+      return;
+    }
+
+    showFormView();
+  });
+</script>
+
+</body>
+</html>

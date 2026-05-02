@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Madadgar Advisor</title>
+
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='imgs/logob.ico') }}">
+
+  <style>
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Inter", "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(10, 102, 194, 0.35), transparent 35%),
+        linear-gradient(135deg, #07111f, #0a2a5e, #06152d);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .chat-wrapper {
+      width: 100%;
+      max-width: 1100px;
+      height: 88vh;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 28px;
+      backdrop-filter: blur(18px);
+      display: grid;
+      grid-template-columns: 290px 1fr;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+    }
+
+    .sidebar {
+      background: rgba(0, 0, 0, 0.22);
+      padding: 28px;
+      border-right: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .logo-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .logo-box img {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      border-radius: 12px;
+    }
+
+    .brand {
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .brand span {
+      color: #4da3ff;
+    }
+
+    .sidebar p {
+      font-size: 14px;
+      color: #b7c7df;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .quick-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #7fb8f5;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    .quick-card {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 16px;
+      border-radius: 18px;
+      margin-bottom: 14px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 14px;
+      color: #dbeafe;
+      border: 1px solid transparent;
+    }
+
+    .quick-card:hover {
+      background: rgba(77, 163, 255, 0.18);
+      border-color: rgba(77, 163, 255, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 18px;
+      color: #b7c7df;
+      font-size: 14px;
+      text-decoration: none;
+    }
+
+    .back-link:hover {
+      color: white;
+    }
+
+    .chat-area {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .chat-header {
+      padding: 24px 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .assistant-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4da3ff, #0a66c2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      box-shadow: 0 0 25px rgba(77, 163, 255, 0.5);
+    }
+
+    .assistant-info h2 {
+      font-size: 20px;
+    }
+
+    .assistant-info small {
+      color: #9fc3ef;
+    }
+
+    .status {
+      font-size: 13px;
+      color: #7fffd4;
+      background: rgba(127, 255, 212, 0.12);
+      padding: 8px 14px;
+      border-radius: 30px;
+      white-space: nowrap;
+    }
+
+    .messages {
+      flex: 1;
+      min-height: 0;
+      padding: 28px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+    .messages::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+    }
+
+    .messages::-webkit-scrollbar-thumb:hover {
+      background: rgba(77, 163, 255, 0.5);
+    }
+
+    .message {
+      max-width: 72%;
+      padding: 15px 18px;
+      border-radius: 18px;
+      line-height: 1.6;
+      font-size: 15px;
+      animation: fadeIn 0.25s ease;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.11);
+      border-top-left-radius: 6px;
+      color: #edf6ff;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #0a66c2, #4da3ff);
+      border-top-right-radius: 6px;
+      color: white;
+    }
+
+    .input-area {
+      padding: 22px;
+      display: flex;
+      gap: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+    }
+
+    .input-area input {
+      flex: 1;
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: none;
+      outline: none;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      font-size: 15px;
+    }
+
+    .input-area input::placeholder {
+      color: #b8c9dd;
+    }
+
+    .input-area button {
+      padding: 0 26px;
+      border: none;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #4da3ff, #0a66c2);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .input-area button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(77, 163, 255, 0.4);
+    }
+
+    .input-area button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .typing {
+      color: #b7c7df;
+      font-style: italic;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 850px) {
+      body {
+        padding: 10px;
+      }
+
+      .chat-wrapper {
+        grid-template-columns: 1fr;
+        height: 95vh;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .message {
+        max-width: 88%;
+      }
+
+      .chat-header {
+        padding: 18px;
+      }
+
+      .status {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="chat-wrapper">
+
+    <aside class="sidebar">
+      <div class="logo-box">
+        <img src="{{ url_for('static', filename='imgs/logo.ico') }}" alt="Madadgar Logo">
+        <div class="brand">Madadgar<span>.</span></div>
+      </div>
+
+      <p>
+        Your AI student advisor for scholarships, internships, emails,
+        deadlines, career guidance, and personalized opportunities.
+      </p>
+
+      <div class="quick-title">Quick prompts</div>
+
+      <div class="quick-card" onclick="quickAsk('Find scholarships for my profile')">
+        Find scholarships for me
+      </div>
+
+      <div class="quick-card" onclick="quickAsk('Rank my opportunities')">
+        Rank my opportunities
+      </div>
+
+      <div class="quick-card" onclick="quickAsk('Help me write a professional email')">
+        Write a professional email
+      </div>
+
+      <div class="quick-card" onclick="quickAsk('What should I apply for this week?')">
+        What should I apply for?
+      </div>
+
+      <a href="/" class="back-link">← Back to Home</a>
+    </aside>
+
+    <main class="chat-area">
+
+      <header class="chat-header">
+        <div class="assistant-info">
+          <div class="avatar">M</div>
+          <div>
+            <h2>Madadgar Advisor</h2>
+            <small>AI-powered student opportunity assistant</small>
+          </div>
+        </div>
+
+        <div class="status">● Online</div>
+      </header>
+
+      <section class="messages" id="messages">
+        <div class="message bot">
+Hi, I’m <b>Madadgar Advisor</b>. Ask me about scholarships, internships, career paths, email replies, deadlines, or your student profile.
+        </div>
+      </section>
+
+      <form class="input-area" id="chatForm">
+        <input
+          type="text"
+          id="userInput"
+          placeholder="Ask Madadgar Advisor anything..."
+          autocomplete="off"
+        />
+        <button type="submit" id="sendBtn">Send</button>
+      </form>
+
+    </main>
+  </div>
+
+  <script>
+    const chatForm = document.getElementById("chatForm");
+    const userInput = document.getElementById("userInput");
+    const messages = document.getElementById("messages");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function addMessage(text, sender) {
+      const div = document.createElement("div");
+      div.className = `message ${sender}`;
+      div.innerHTML = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+      return div;
+    }
+
+    function quickAsk(text) {
+      userInput.value = text;
+      chatForm.dispatchEvent(new Event("submit"));
+    }
+
+    chatForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      addMessage(message, "user");
+      userInput.value = "";
+      sendBtn.disabled = true;
+
+      const typingBubble = addMessage("Madadgar Advisor is thinking...", "bot typing");
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ message: message })
+        });
+
+        const data = await response.json();
+        typingBubble.remove();
+
+        if (data.success) {
+          addMessage(data.reply, "bot");
+        } else {
+          addMessage(data.error || "Sorry, something went wrong. Please try again.", "bot");
+        }
+
+      } catch (error) {
+        typingBubble.remove();
+        addMessage("Server connection failed. Make sure Flask is running on http://127.0.0.1:5000", "bot");
+      } finally {
+        sendBtn.disabled = false;
+        userInput.focus();
+      }
+    });
+  </script>
+
+</body>
+</html>

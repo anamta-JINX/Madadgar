@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Madadgar | Input</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            madadgar: {
+              blue: "#0A66C2",
+              dark: "#063B73",
+              light: "#EAF4FF"
+            }
+          }
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-madadgar-light via-white to-blue-100 p-6">
+
+  <div class="max-w-5xl mx-auto bg-white/90 backdrop-blur-xl shadow-2xl rounded-3xl p-8 border border-blue-100">
+
+    <!-- HEADER -->
+    <div class="flex items-center gap-4 mb-8">
+      <img src="{{ url_for('static', filename='imgs/logo.ico') }}" class="w-20 h-20 object-contain" />
+      <div>
+        <h1 class="text-3xl font-bold text-madadgar-blue">Input Emails</h1>
+        <p class="text-gray-500 text-sm">Upload screenshots or paste email content</p>
+      </div>
+    </div>
+
+    <!-- FORM -->
+    <form id="inputForm" class="space-y-8">
+
+      <!-- IMAGE UPLOAD -->
+      <div>
+        <h2 class="text-lg font-semibold text-madadgar-dark mb-2">Upload Screenshots</h2>
+        <p class="text-sm text-gray-500 mb-4">Max 20 images</p>
+
+        <label class="flex flex-col items-center justify-center border-2 border-dashed border-blue-300 rounded-2xl p-8 text-center cursor-pointer hover:bg-blue-50 transition">
+          <span class="text-madadgar-blue text-xl font-semibold">Click to upload</span>
+          <span class="text-gray-500 text-sm">PNG, JPG, JPEG supported</span>
+
+          <input
+            id="imageInput"
+            type="file"
+            name="images"
+            accept="image/*"
+            multiple
+            class="hidden"
+          />
+        </label>
+
+        <div id="filePreview" class="flex flex-wrap gap-2 mt-4"></div>
+      </div>
+
+      <!-- TEXT INPUT -->
+      <div>
+        <div class="flex justify-between items-center mb-3">
+          <div>
+            <h2 class="text-lg font-semibold text-madadgar-dark">Paste Email Text</h2>
+            <p class="text-sm text-gray-500">Max 20 inputs</p>
+          </div>
+
+          <button type="button" id="addTextBtn"
+            class="bg-blue-100 text-madadgar-blue px-4 py-2 rounded-lg font-medium hover:bg-blue-200 transition">
+            + Add
+          </button>
+        </div>
+
+        <div id="textInputs" class="space-y-3">
+          <textarea name="texts"
+            class="w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-madadgar-blue outline-none"
+            placeholder="Paste email content here..."></textarea>
+        </div>
+      </div>
+
+      <!-- SUBMIT -->
+      <button
+        type="submit"
+        class="w-full bg-madadgar-blue text-white py-4 rounded-xl font-semibold hover:bg-madadgar-dark transition shadow-lg">
+        Analyze Opportunities
+      </button>
+
+    </form>
+
+    <!-- RESULTS -->
+    <div id="results" class="mt-10 hidden">
+      <h2 class="text-xl font-bold text-madadgar-blue mb-4">Results</h2>
+      <div id="resultContent" class="space-y-4"></div>
+    </div>
+
+  </div>
+
+  <!-- SCRIPT -->
+  <script>
+    const MAX = 20;
+
+    const imageInput = document.getElementById("imageInput");
+    const filePreview = document.getElementById("filePreview");
+    const addTextBtn = document.getElementById("addTextBtn");
+    const textInputs = document.getElementById("textInputs");
+    const form = document.getElementById("inputForm");
+    const results = document.getElementById("results");
+    const resultContent = document.getElementById("resultContent");
+
+    // IMAGE PREVIEW
+    imageInput.addEventListener("change", () => {
+      filePreview.innerHTML = "";
+
+      const files = Array.from(imageInput.files);
+
+      if (files.length > MAX) {
+        alert("Max 20 images allowed");
+        imageInput.value = "";
+        return;
+      }
+
+      files.forEach(f => {
+        const div = document.createElement("div");
+        div.className = "px-3 py-1 bg-blue-100 rounded-full text-sm";
+        div.textContent = f.name;
+        filePreview.appendChild(div);
+      });
+    });
+
+    // ADD TEXT INPUT
+    addTextBtn.addEventListener("click", () => {
+      const count = textInputs.querySelectorAll("textarea").length;
+
+      if (count >= MAX) {
+        alert("Max 20 text inputs");
+        return;
+      }
+
+      const ta = document.createElement("textarea");
+      ta.name = "texts";
+      ta.className = "w-full p-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-madadgar-blue outline-none";
+      ta.placeholder = "Paste email content here...";
+      textInputs.appendChild(ta);
+    });
+
+    // SUBMIT
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+
+      results.classList.remove("hidden");
+      resultContent.innerHTML = "<p>Analyzing...</p>";
+
+      try {
+        const res = await fetch("/process-inputs", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          resultContent.innerHTML = `<p>${data.error}</p>`;
+          return;
+        }
+
+        const ops = data.display_opportunities || [];
+
+        if (!ops.length) {
+          resultContent.innerHTML = "<p>No opportunities found</p>";
+          return;
+        }
+
+        resultContent.innerHTML = ops.map(op => `
+          <div class="p-5 border rounded-xl bg-white shadow">
+            <h3 class="font-bold text-madadgar-blue text-lg">#${op.rank} ${op.title}</h3>
+            <p class="text-sm text-gray-600">${op.summary}</p>
+            <p class="text-sm mt-2"><b>Score:</b> ${op.score}</p>
+            <p class="text-sm"><b>Deadline:</b> ${op.deadline}</p>
+          </div>
+        `).join("");
+
+      } catch {
+        resultContent.innerHTML = "<p>Error connecting to server</p>";
+      }
+    });
+  </script>
+
+</body>
+</html>

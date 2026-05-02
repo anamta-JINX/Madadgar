@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Madadgar Dashboard</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='imgs/logob.ico') }}">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            madadgar: {
+              blue: "#0A66C2",
+              dark: "#063B73",
+              light: "#EAF4FF"
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+  .nav-link-light {
+    color: rgba(255, 255, 255, 0.78);
+    transition: color 0.2s ease;
+  }
+
+  .nav-link-light:hover {
+    color: white;
+  }
+
+  .btn-white {
+    background: white;
+    color: #0A66C2;
+    transition: all 0.2s ease;
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.2);
+  }
+
+  .btn-white:hover {
+    background: #f0f6fc;
+    transform: translateY(-1px);
+  }
+    html {
+      scroll-behavior: smooth;
+    }
+
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    @media (min-width: 1024px) {
+      #leftRail {
+        position: relative;
+      }
+
+      #leftRailInner.sidebar-fixed-bottom {
+        position: fixed;
+        bottom: 24px;
+        z-index: 20;
+      }
+
+      #leftRailInner.sidebar-absolute-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        z-index: 10;
+      }
+
+      #leftRailInner.sidebar-normal {
+        position: static;
+      }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-madadgar-light via-white to-blue-100 text-gray-800">
+
+  <!-- Server data as JSON -->
+  <script id="serverOpportunities" type="application/json">{{ opportunities|default([])|tojson }}</script>
+  <script id="serverEmailItems" type="application/json">{{ email_items|default([])|tojson }}</script>
+  <script id="serverMeta" type="application/json">
+    {{ {
+      "mode": mode|default(""),
+      "warning": warning|default(""),
+      "note": note|default(""),
+      "error": error|default(""),
+      "fetched_count": fetched_count|default(0),
+      "filtered_count": filtered_count|default(0),
+      "sent_to_ai_count": sent_to_ai_count|default(0)
+    }|tojson }}
+  </script>
+
+  <!-- Navbar -->
+<nav id="navbar"
+     class="fixed top-0 left-0 w-full z-50 transition-all duration-300"
+     style="
+       background:
+         radial-gradient(ellipse 60% 80% at 100% 0%, rgba(45,131,217,0.45), transparent 55%),
+         radial-gradient(ellipse 70% 60% at 0% 100%, rgba(5,42,82,0.6), transparent 60%),
+         linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
+       border-bottom: 1px solid rgba(255,255,255,0.1);
+     ">
+
+  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+
+    <!-- Logo -->
+    <a href="/" class="flex items-center">
+      <img src="{{ url_for('static', filename='imgs/logow.png') }}"
+           alt="Madadgar Logo"
+           class="h-20 w-auto">
+    </a>
+
+    <!-- Links -->
+    <div class="hidden md:flex items-center gap-8 text-sm">
+      <a href="/" class="nav-link-light">Home</a>
+      <a href="/dashboard" class="nav-link-light font-semibold text-white">Dashboard</a>
+      <a href="/chatbot" class="nav-link-light">Chatbot</a>
+    </div>
+
+    <!-- Right -->
+    <div class="flex items-center gap-3">
+      <!-- Profile Icon -->
+      <a href="{% if user_email %}/profile{% else %}/login{% endif %}"
+         class="w-9 h-9 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition">
+
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zM4 20a8 8 0 0116 0"
+                stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+
+      </a>
+
+      <!-- Logout -->
+      <a href="/logout"
+         class="hidden sm:inline text-sm nav-link-light">
+        Logout
+      </a>
+
+    </div>
+
+  </div>
+</nav>
+
+ <main class="max-w-7xl mx-auto px-6 pt-28 pb-10">
+
+    <!-- Header -->
+    <section class="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div>
+        <h2 class="text-4xl font-bold text-gray-900">Opportunity Dashboard</h2>
+        <p class="text-gray-500 mt-2">
+          Analyze Gmail, pasted emails, or screenshots. Ranked results appear by urgency.
+        </p>
+      </div>
+
+      <a href="/connect-gmail"
+         class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-madadgar-blue text-white font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200">
+        Connect / Refresh Gmail
+      </a>
+    </section>
+
+    <div id="dashboardGrid" class="grid lg:grid-cols-12 gap-6 items-start">
+
+      <!-- LEFT COLUMN -->
+      <aside id="leftRail" class="lg:col-span-4">
+        <div id="leftRailInner" class="space-y-6 sidebar-normal">
+
+          <!-- Manual Input Panel -->
+          <section class="bg-white rounded-3xl shadow-xl border border-blue-100 p-6">
+            <div class="flex items-start justify-between gap-3 mb-5">
+              <div>
+                <h3 class="text-xl font-bold text-madadgar-blue">New Analysis</h3>
+                <p class="text-sm text-gray-500 mt-1">Upload screenshots or paste email text.</p>
+              </div>
+
+              <span class="text-xs px-3 py-1 rounded-full bg-blue-50 text-madadgar-blue border border-blue-100 font-semibold">
+                Manual
+              </span>
+            </div>
+
+            <form id="analysisForm" class="space-y-6">
+
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Images</label>
+
+                <label class="border-2 border-dashed border-blue-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-blue-50 transition">
+                  <span class="text-madadgar-blue font-semibold">Click to upload</span>
+                  <span class="text-xs text-gray-500 mt-1">Max 20 images</span>
+                  <input id="imageInput" name="images" type="file" accept="image/*" multiple class="hidden">
+                </label>
+
+                <div id="filePreview" class="mt-3 flex flex-wrap gap-2"></div>
+              </div>
+
+              <div>
+                <div class="flex justify-between items-center mb-2">
+                  <label class="block text-sm font-semibold text-gray-700">Paste Emails</label>
+                  <button type="button" id="addTextBtn"
+                    class="text-xs bg-blue-100 text-madadgar-blue px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-200">
+                    + Add
+                  </button>
+                </div>
+
+                <div id="textInputs" class="space-y-3">
+                  <textarea
+                    name="texts"
+                    class="w-full min-h-32 p-4 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-madadgar-blue outline-none"
+                    placeholder="Paste email content here..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <button type="submit"
+                class="w-full bg-madadgar-blue text-white py-3 rounded-xl font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200">
+                Analyze Emails
+              </button>
+
+            </form>
+
+            <div class="mt-6 p-4 rounded-2xl bg-blue-50 border border-blue-100">
+              <h4 class="font-bold text-madadgar-blue">Gmail Analysis</h4>
+              <p class="text-sm text-gray-600 mt-1">
+                Gmail emails are fetched, filtered locally, then only important ones are sent to AI ranking.
+              </p>
+              <a href="/connect-gmail"
+                 class="mt-3 inline-block text-sm font-semibold text-madadgar-blue hover:underline">
+                Connect Gmail →
+              </a>
+            </div>
+          </section>
+
+          <!-- Fetched Gmail Emails -->
+          <section id="gmailInputSection" class="bg-white rounded-3xl shadow-xl border border-blue-100 overflow-hidden">
+            <div class="p-5 border-b border-blue-100 bg-gradient-to-br from-blue-50 to-white">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-[0.15em] text-madadgar-blue">Input Source</p>
+                  <h3 class="text-lg font-bold text-gray-900 mt-1">Fetched Gmail Emails</h3>
+                  <p id="gmailInputLabel" class="text-xs text-gray-500 mt-1">
+                    No Gmail inputs yet.
+                  </p>
+                </div>
+
+                <span id="gmailModeBadge"
+                      class="shrink-0 text-[11px] px-3 py-1.5 rounded-full bg-white text-madadgar-blue border border-blue-100 font-semibold">
+                  Waiting
+                </span>
+              </div>
+            </div>
+
+            <div class="p-4">
+              <div class="mb-3 flex items-center justify-between">
+                <p class="text-xs text-gray-500">
+                  Scanned emails appear here before ranking.
+                </p>
+                <button id="toggleGmailInputsBtn"
+                        type="button"
+                        class="text-xs font-semibold text-madadgar-blue hover:underline">
+                  Collapse
+                </button>
+              </div>
+
+              <div id="gmailInputList"
+                   class="space-y-3 transition-all duration-300 opacity-100"></div>
+            </div>
+          </section>
+
+        </div>
+      </aside>
+
+      <!-- RIGHT COLUMN / SPOTLIGHT -->
+      <section id="rightRail" class="lg:col-span-8 space-y-6">
+
+        <!-- Stats -->
+        <div class="grid md:grid-cols-4 gap-4">
+          <div class="bg-white rounded-2xl border border-blue-100 p-5 shadow-sm">
+            <p class="text-sm text-gray-500">Fetched</p>
+            <h3 id="statFetched" class="text-3xl font-bold text-gray-900">0</h3>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-blue-100 p-5 shadow-sm">
+            <p class="text-sm text-gray-500">Passed Filter</p>
+            <h3 id="statFiltered" class="text-3xl font-bold text-gray-900">0</h3>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-blue-100 p-5 shadow-sm">
+            <p class="text-sm text-gray-500">Ranked</p>
+            <h3 id="statOpps" class="text-3xl font-bold text-gray-900">0</h3>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-blue-100 p-5 shadow-sm">
+            <p class="text-sm text-gray-500">Best Score</p>
+            <h3 id="statScore" class="text-3xl font-bold text-gray-900">0</h3>
+          </div>
+        </div>
+
+        <!-- Status -->
+        <div id="statusMessage" class="hidden rounded-3xl border p-5"></div>
+
+        <!-- Ranked Opportunities -->
+        <section class="bg-white rounded-[34px] shadow-2xl border border-blue-100 p-6">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.15em] text-madadgar-blue">Main Output</p>
+              <h3 class="text-2xl font-bold text-gray-900 mt-1">Ranked Opportunities</h3>
+              <p id="currentRunLabel" class="text-sm text-gray-500 mt-1">No analysis yet.</p>
+            </div>
+
+            <button id="clearCurrentBtn"
+              class="hidden text-sm px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50">
+              Clear View
+            </button>
+          </div>
+
+          <div id="loadingBox" class="hidden text-center py-16">
+            <div class="w-12 h-12 border-4 border-blue-100 border-t-madadgar-blue rounded-full animate-spin mx-auto"></div>
+            <p class="text-gray-500 mt-4">Analyzing emails...</p>
+          </div>
+
+          <div id="emptyBox" class="text-center py-20 text-gray-500">
+            <div class="w-16 h-16 mx-auto rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4">
+              <span class="text-3xl">📬</span>
+            </div>
+            <p class="text-lg font-semibold text-gray-700">No results yet</p>
+            <p class="text-sm mt-1">Run an analysis or connect Gmail to see ranked opportunities here.</p>
+          </div>
+
+          <div id="triageSummary" class="hidden mb-5 flex flex-wrap gap-3"></div>
+          <div id="resultContent" class="space-y-4"></div>
+        </section>
+
+        <!-- History -->
+        <section class="bg-white rounded-3xl shadow-xl border border-blue-100 p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h3 class="text-xl font-bold text-madadgar-blue">Previous Inputs</h3>
+              <p class="text-sm text-gray-500">Saved in this browser.</p>
+            </div>
+
+            <button id="clearHistoryBtn"
+              class="text-sm px-4 py-2 rounded-xl border border-red-100 text-red-600 hover:bg-red-50">
+              Clear History
+            </button>
+          </div>
+
+          <div id="historyList" class="space-y-3"></div>
+        </section>
+
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    const MAX = 20;
+    const STORAGE_KEY = "madadgarAnalysisHistory";
+
+    function parseScriptJson(id, fallback) {
+      try {
+        const el = document.getElementById(id);
+        if (!el) return fallback;
+        return JSON.parse(el.textContent || "null") ?? fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    const SERVER_OPPORTUNITIES = parseScriptJson("serverOpportunities", []);
+    const SERVER_EMAIL_ITEMS = parseScriptJson("serverEmailItems", []);
+    const SERVER_META = parseScriptJson("serverMeta", {});
+
+    const SERVER_MODE = SERVER_META.mode || "";
+    const SERVER_WARNING = SERVER_META.warning || "";
+    const SERVER_NOTE = SERVER_META.note || "";
+    const SERVER_ERROR = SERVER_META.error || "";
+    const SERVER_FETCHED_COUNT = Number(SERVER_META.fetched_count || 0);
+    const SERVER_FILTERED_COUNT = Number(SERVER_META.filtered_count || 0);
+    const SERVER_SENT_TO_AI_COUNT = Number(SERVER_META.sent_to_ai_count || 0);
+
+    const form = document.getElementById("analysisForm");
+    const imageInput = document.getElementById("imageInput");
+    const filePreview = document.getElementById("filePreview");
+    const addTextBtn = document.getElementById("addTextBtn");
+    const textInputs = document.getElementById("textInputs");
+
+    const loadingBox = document.getElementById("loadingBox");
+    const emptyBox = document.getElementById("emptyBox");
+    const resultContent = document.getElementById("resultContent");
+    const triageSummary = document.getElementById("triageSummary");
+    const historyList = document.getElementById("historyList");
+
+    const statusMessage = document.getElementById("statusMessage");
+
+    const gmailInputList = document.getElementById("gmailInputList");
+    const gmailInputLabel = document.getElementById("gmailInputLabel");
+    const gmailModeBadge = document.getElementById("gmailModeBadge");
+    const toggleGmailInputsBtn = document.getElementById("toggleGmailInputsBtn");
+
+    const statFetched = document.getElementById("statFetched");
+    const statFiltered = document.getElementById("statFiltered");
+    const statOpps = document.getElementById("statOpps");
+    const statScore = document.getElementById("statScore");
+    const currentRunLabel = document.getElementById("currentRunLabel");
+
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+    const clearCurrentBtn = document.getElementById("clearCurrentBtn");
+
+    const dashboardGrid = document.getElementById("dashboardGrid");
+    const leftRail = document.getElementById("leftRail");
+    const leftRailInner = document.getElementById("leftRailInner");
+
+    function getHistory() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    }
+
+    function saveHistory(history) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+      renderHistory();
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function cleanArray(value) {
+      return Array.isArray(value) ? value : [];
+    }
+
+    function getBestScore(opportunities) {
+      opportunities = cleanArray(opportunities);
+      if (!opportunities.length) return "0";
+      return Math.max(...opportunities.map(o => Number(o.score || 0))).toFixed(1);
+    }
+
+    function showStatus(message, type = "info") {
+      if (!message) {
+        statusMessage.classList.add("hidden");
+        return;
+      }
+
+      statusMessage.classList.remove("hidden");
+
+      if (type === "error") {
+        statusMessage.className = "rounded-3xl border p-5 bg-red-50 border-red-100 text-red-700";
+      } else if (type === "warning") {
+        statusMessage.className = "rounded-3xl border p-5 bg-yellow-50 border-yellow-100 text-yellow-800";
+      } else if (type === "success") {
+        statusMessage.className = "rounded-3xl border p-5 bg-green-50 border-green-100 text-green-700";
+      } else {
+        statusMessage.className = "rounded-3xl border p-5 bg-blue-50 border-blue-100 text-blue-800";
+      }
+
+      statusMessage.textContent = message;
+    }
+
+    function renderEmptyInputBox() {
+      gmailInputLabel.textContent = "No Gmail inputs yet.";
+      gmailModeBadge.textContent = "Waiting";
+
+      gmailInputList.classList.remove("hidden", "opacity-0");
+      gmailInputList.classList.add("opacity-100");
+
+      if (toggleGmailInputsBtn) {
+        toggleGmailInputsBtn.textContent = "Collapse";
+      }
+
+      gmailInputList.innerHTML = `
+        <div class="rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-5 text-center">
+          <div class="w-12 h-12 mx-auto rounded-2xl bg-white border border-blue-100 flex items-center justify-center mb-3">
+            <span class="text-2xl">📥</span>
+          </div>
+          <p class="text-sm font-bold text-gray-800">No fetched inputs yet</p>
+          <p class="text-xs text-gray-500 mt-1">
+            Connect Gmail or run a manual analysis. Scanned inputs will appear here.
+          </p>
+        </div>
+      `;
+
+      requestAnimationFrame(updateSmartSidebar);
+    }
+
+    function getUrgencyBucket(opportunity) {
+      const urgency = String(opportunity.urgency || "").toLowerCase();
+      const deadline = String(opportunity.deadline || "").toLowerCase();
+      const title = String(opportunity.title || opportunity.subject || "").toLowerCase();
+      const summary = String(opportunity.summary || "").toLowerCase();
+      const combined = `${urgency} ${deadline} ${title} ${summary}`;
+
+      const todayWords = ["today", "tonight", "urgent", "immediately", "asap", "act today"];
+      const weekWords = ["tomorrow", "this week", "friday", "monday", "tuesday", "wednesday", "thursday", "saturday", "sunday", "upcoming", "soon"];
+
+      const hasTodayWord = todayWords.some(word => combined.includes(word));
+      const hasWeekWord = weekWords.some(word => combined.includes(word));
+
+      if (urgency === "critical" || urgency === "high" || hasTodayWord) {
+        return {
+          key: "today",
+          label: "ACT TODAY",
+          chipClass: "bg-red-50 text-red-600 border-red-100",
+          textClass: "text-red-500",
+          barClass: "bg-red-500"
+        };
+      }
+
+      if (urgency === "medium" || hasWeekWord) {
+        return {
+          key: "week",
+          label: "THIS WEEK",
+          chipClass: "bg-orange-50 text-orange-600 border-orange-100",
+          textClass: "text-orange-500",
+          barClass: "bg-orange-500"
+        };
+      }
+
+      return {
+        key: "wait",
+        label: "CAN WAIT",
+        chipClass: "bg-slate-50 text-slate-600 border-slate-200",
+        textClass: "text-slate-500",
+        barClass: "bg-slate-400"
+      };
+    }
+
+    function groupOpportunities(opportunities) {
+      const groups = {
+        today: [],
+        week: [],
+        wait: []
+      };
+
+      cleanArray(opportunities)
+        .slice()
+        .sort((a, b) => Number(b.score || 0) - Number(a.score || 0))
+        .forEach(op => {
+          const bucket = getUrgencyBucket(op);
+          groups[bucket.key].push({ ...op, bucket });
+        });
+
+      return groups;
+    }
+
+    function renderTriageSummary(groups) {
+      const chips = [
+        {
+          label: "Act Today",
+          value: groups.today.length,
+          classes: "bg-red-50 text-red-600 border-red-100"
+        },
+        {
+          label: "This Week",
+          value: groups.week.length,
+          classes: "bg-orange-50 text-orange-600 border-orange-100"
+        },
+        {
+          label: "Can Wait",
+          value: groups.wait.length,
+          classes: "bg-slate-50 text-slate-600 border-slate-200"
+        }
+      ];
+
+      triageSummary.classList.remove("hidden");
+      triageSummary.innerHTML = chips.map(chip => `
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold ${chip.classes}">
+          <span>${escapeHtml(chip.label)}</span>
+          <span class="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full bg-white/80 border border-white text-xs">
+            ${chip.value}
+          </span>
+        </div>
+      `).join("");
+
+      requestAnimationFrame(updateSmartSidebar);
+    }
+
+    function renderTriageRow(op) {
+      const bucket = op.bucket || getUrgencyBucket(op);
+      const score = Number(op.score || 0).toFixed(1);
+      const subtitle = op.reason || op.summary || "No summary available.";
+      const deadlineText = op.deadline && op.deadline !== "Not mentioned"
+        ? op.deadline
+        : "No hard deadline";
+
+      return `
+        <div class="grid grid-cols-[6px_1fr_auto] gap-4 px-5 py-5">
+          <div class="rounded-full ${bucket.barClass}"></div>
+
+          <div class="min-w-0">
+            <div class="text-xs font-bold uppercase tracking-[0.14em] ${bucket.textClass}">
+              ${escapeHtml(bucket.label)}
+            </div>
+
+            <h4 class="text-[1.15rem] font-bold text-slate-800 mt-1 leading-snug">
+              ${escapeHtml(op.title || op.subject || "Untitled opportunity")}
+            </h4>
+
+            <p class="text-sm text-slate-500 mt-1">
+              ${escapeHtml(subtitle)}
+            </p>
+
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span class="inline-flex items-center px-3 py-1 rounded-full border text-xs font-semibold ${bucket.chipClass}">
+                ${escapeHtml(op.type || "Opportunity")}
+              </span>
+
+              <span class="inline-flex items-center px-3 py-1 rounded-full border border-blue-100 bg-blue-50 text-blue-700 text-xs font-semibold">
+                Deadline: ${escapeHtml(deadlineText)}
+              </span>
+
+              <span class="inline-flex items-center px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold">
+                ${escapeHtml(op.sender || "Unknown sender")}
+              </span>
+            </div>
+          </div>
+
+          <div class="text-right shrink-0 min-w-[88px]">
+            <div class="text-sm text-slate-400 font-medium">Score</div>
+            <div class="text-2xl font-bold text-slate-800 mt-1">${escapeHtml(score)}</div>
+            <div class="text-xs text-slate-400 mt-2">${escapeHtml(bucket.label)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTriageSection(title, rows, sectionClass) {
+      if (!rows.length) return "";
+
+      return `
+        <div class="border-t border-slate-200 first:border-t-0">
+          <div class="px-5 py-3 ${sectionClass}">
+            <span class="text-sm font-bold uppercase tracking-[0.14em]">${escapeHtml(title)}</span>
+          </div>
+          <div class="divide-y divide-slate-200">
+            ${rows.map(renderTriageRow).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTriageBoard(opportunities) {
+      const groups = groupOpportunities(opportunities);
+      renderTriageSummary(groups);
+
+      return `
+        <div class="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between gap-4 px-5 py-4 bg-slate-50 border-b border-slate-200">
+            <div class="flex items-center gap-4 min-w-0">
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="w-3.5 h-3.5 rounded-full bg-red-300"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-yellow-300"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-green-300"></span>
+              </div>
+
+              <div class="text-sm md:text-base font-semibold text-slate-500 truncate">
+                Triage results · ${opportunities.length} email${opportunities.length === 1 ? "" : "s"}
+              </div>
+            </div>
+
+            <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-blue-50 text-madadgar-blue border border-blue-100 text-sm font-semibold">
+              Sorted by urgency
+            </span>
+          </div>
+
+          ${renderTriageSection("ACT TODAY", groups.today, "bg-red-50 text-red-600")}
+          ${renderTriageSection("THIS WEEK", groups.week, "bg-orange-50 text-orange-600")}
+          ${renderTriageSection("CAN WAIT", groups.wait, "bg-slate-50 text-slate-600")}
+        </div>
+      `;
+    }
+
+    imageInput.addEventListener("change", () => {
+      filePreview.innerHTML = "";
+      const files = Array.from(imageInput.files);
+
+      if (files.length > MAX) {
+        alert("You can upload maximum 20 images.");
+        imageInput.value = "";
+        return;
+      }
+
+      files.forEach(file => {
+        const chip = document.createElement("span");
+        chip.className = "text-xs bg-blue-50 text-madadgar-blue px-3 py-1 rounded-full border border-blue-100";
+        chip.textContent = file.name;
+        filePreview.appendChild(chip);
+      });
+
+      requestAnimationFrame(updateSmartSidebar);
+    });
+
+    addTextBtn.addEventListener("click", () => {
+      const count = textInputs.querySelectorAll("textarea").length;
+
+      if (count >= MAX) {
+        alert("Maximum 20 text inputs allowed.");
+        return;
+      }
+
+      const textarea = document.createElement("textarea");
+      textarea.name = "texts";
+      textarea.placeholder = "Paste another email content here...";
+      textarea.className = "w-full min-h-32 p-4 rounded-2xl border border-gray-300 focus:ring-2 focus:ring-madadgar-blue outline-none";
+      textInputs.appendChild(textarea);
+
+      requestAnimationFrame(updateSmartSidebar);
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const textValues = Array.from(textInputs.querySelectorAll("textarea"))
+        .map(t => t.value.trim())
+        .filter(Boolean);
+
+      const imageCount = imageInput.files.length;
+
+      if (textValues.length + imageCount === 0) {
+        alert("Please upload images or paste at least one email.");
+        return;
+      }
+
+      const formData = new FormData(form);
+
+      loadingBox.classList.remove("hidden");
+      emptyBox.classList.add("hidden");
+      resultContent.innerHTML = "";
+      triageSummary.classList.add("hidden");
+      clearCurrentBtn.classList.add("hidden");
+      showStatus("");
+      renderEmptyInputBox();
+
+      try {
+        const response = await fetch("/process-inputs", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          loadingBox.classList.add("hidden");
+          showStatus(data.error || "Something went wrong.", "error");
+          return;
+        }
+
+        const run = {
+          id: Date.now(),
+          source: "manual_input",
+          createdAt: new Date().toLocaleString(),
+          inputCount: data.input_count || (textValues.length + imageCount),
+          textPreview: textValues[0] ? textValues[0].slice(0, 120) : "Image upload",
+          opportunities: data.display_opportunities || [],
+          inputEmails: data.email_items || [],
+          fetchedCount: data.input_count || (textValues.length + imageCount),
+          filteredCount: data.input_count || (textValues.length + imageCount),
+          sentToAiCount: data.input_count || (textValues.length + imageCount),
+          mode: "manual_input"
+        };
+
+        const history = getHistory();
+        history.unshift(run);
+        saveHistory(history.slice(0, 20));
+
+        showRun(run);
+
+      } catch (error) {
+        loadingBox.classList.add("hidden");
+        showStatus("Server error. Please try again.", "error");
+      }
+    });
+
+    function showRun(run) {
+      loadingBox.classList.add("hidden");
+      emptyBox.classList.add("hidden");
+      clearCurrentBtn.classList.remove("hidden");
+
+      const opportunities = cleanArray(run.opportunities);
+      const inputEmails = cleanArray(run.inputEmails);
+
+      statFetched.textContent = run.fetchedCount || inputEmails.length || 0;
+      statFiltered.textContent = run.filteredCount || 0;
+      statOpps.textContent = opportunities.length;
+      statScore.textContent = getBestScore(opportunities);
+
+      currentRunLabel.textContent = `Showing analysis from ${run.createdAt}`;
+
+      if (run.error) {
+        showStatus(run.error, "error");
+      } else if (run.warning) {
+        showStatus(run.warning, "warning");
+      } else if (run.note) {
+        showStatus(run.note, "info");
+      } else {
+        showStatus("");
+      }
+
+      renderInputEmails(inputEmails, run);
+
+      resultContent.innerHTML = "";
+      triageSummary.classList.add("hidden");
+
+      if (!opportunities.length) {
+        const noImportantMessage =
+          run.mode === "gmail_connected_no_important_emails"
+            ? "No important emails found. Madadgar scanned your Gmail, but nothing urgent or opportunity-related passed the filter."
+            : "No ranked opportunities found in this analysis.";
+
+        resultContent.innerHTML = `
+          <div class="p-8 rounded-2xl bg-green-50 border border-green-100 text-green-800">
+            <p class="text-lg font-bold">✅ ${escapeHtml(noImportantMessage)}</p>
+            <p class="text-sm mt-2">
+              Fetched inputs are shown in the left panel. Promotional, security, newsletter, or low-priority emails were not sent to AI ranking.
+            </p>
+          </div>
+        `;
+
+        requestAnimationFrame(updateSmartSidebar);
+        return;
+      }
+
+      resultContent.innerHTML = renderTriageBoard(opportunities);
+      requestAnimationFrame(updateSmartSidebar);
+    }
+
+    function renderInputEmails(inputEmails, run) {
+      inputEmails = cleanArray(inputEmails);
+
+      if (!inputEmails.length) {
+        renderEmptyInputBox();
+        return;
+      }
+
+      const fetched = run.fetchedCount || inputEmails.length || 0;
+      const filtered = run.filteredCount || 0;
+      const sent = run.sentToAiCount || 0;
+
+      gmailInputLabel.textContent =
+        `Fetched ${fetched} · Passed ${filtered} · Sent ${sent}`;
+
+      gmailModeBadge.textContent = run.source === "manual_input"
+        ? "Manual"
+        : "Gmail";
+
+      gmailInputList.classList.remove("hidden", "opacity-0");
+      gmailInputList.classList.add("opacity-100");
+
+      if (toggleGmailInputsBtn) {
+        toggleGmailInputsBtn.textContent = "Collapse";
+      }
+
+      gmailInputList.innerHTML = inputEmails.map((email, index) => {
+        const body = email.body || email.summary || "";
+        const score = email.filter_score !== undefined ? email.filter_score : "";
+        const urgency = email.urgency_score !== undefined ? email.urgency_score : "";
+        const priority = email.priority_label || "";
+        const detector = email.edu_detector || {};
+        const eduText = detector.prediction ? detector.prediction : "";
+
+        return `
+          <article class="rounded-2xl border border-blue-100 bg-blue-50/40 overflow-hidden">
+            <div class="p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="text-[11px] font-bold text-madadgar-blue uppercase tracking-[0.12em]">
+                    Input #${index + 1}
+                    ${priority ? ` · ${escapeHtml(priority)}` : ""}
+                  </p>
+
+                  <h4 class="text-sm font-bold text-gray-900 mt-1 leading-snug line-clamp-2">
+                    ${escapeHtml(email.subject || "No subject")}
+                  </h4>
+                </div>
+
+                ${score !== "" ? `
+                  <span class="shrink-0 text-[11px] px-2.5 py-1 rounded-full bg-white border border-blue-100 text-madadgar-blue font-bold">
+                    ${escapeHtml(score)}
+                  </span>
+                ` : ""}
+              </div>
+
+              <p class="text-xs text-gray-500 mt-2 truncate">
+                ${escapeHtml(email.sender_name || "")}
+                ${email.sender ? `&lt;${escapeHtml(email.sender)}&gt;` : ""}
+              </p>
+
+              ${email.date ? `
+                <p class="text-[11px] text-gray-400 mt-1 truncate">
+                  ${escapeHtml(email.date)}
+                </p>
+              ` : ""}
+
+              <div class="mt-3 flex flex-wrap gap-1.5">
+                ${urgency !== "" ? `
+                  <span class="text-[10px] px-2 py-1 rounded-full bg-red-50 border border-red-100 text-red-600 font-semibold">
+                    urgency ${escapeHtml(urgency)}
+                  </span>
+                ` : ""}
+
+                ${eduText ? `
+                  <span class="text-[10px] px-2 py-1 rounded-full bg-white border border-blue-100 text-madadgar-blue font-semibold">
+                    ${escapeHtml(eduText)}
+                  </span>
+                ` : ""}
+              </div>
+
+              ${email.matched_keywords && email.matched_keywords.length ? `
+                <div class="flex flex-wrap gap-1.5 mt-3">
+                  ${email.matched_keywords.slice(0, 6).map(keyword => `
+                    <span class="text-[10px] px-2 py-1 rounded-full bg-white border border-blue-100 text-gray-600">
+                      ${escapeHtml(keyword)}
+                    </span>
+                  `).join("")}
+                </div>
+              ` : ""}
+
+              <p class="text-xs text-gray-600 mt-3 leading-relaxed">
+                ${escapeHtml(body.slice(0, 180))}
+                ${body.length > 180 ? "..." : ""}
+              </p>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      requestAnimationFrame(updateSmartSidebar);
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+
+      if (!history.length) {
+        historyList.innerHTML = `
+          <div class="text-center py-8 text-gray-500">
+            No previous analyses yet.
+          </div>
+        `;
+        requestAnimationFrame(updateSmartSidebar);
+        return;
+      }
+
+      historyList.innerHTML = history.map(run => {
+        const gmailBadge = run.source === "gmail"
+          ? '<p class="text-xs text-madadgar-blue mt-1 font-semibold">Gmail Analysis</p>'
+          : "";
+
+        return `
+          <button onclick="openHistoryRun(${run.id})"
+            class="w-full text-left p-4 rounded-2xl border border-blue-100 hover:bg-blue-50 transition">
+            <div class="flex justify-between gap-3">
+              <div>
+                <p class="font-semibold text-gray-800">${escapeHtml(run.createdAt)}</p>
+                <p class="text-sm text-gray-500 mt-1">${escapeHtml(run.textPreview || "Analysis")}</p>
+                ${gmailBadge}
+              </div>
+
+              <div class="text-right shrink-0">
+                <p class="text-lg font-bold text-madadgar-blue">${(run.opportunities || []).length}</p>
+                <p class="text-xs text-gray-400">ranked</p>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join("");
+
+      requestAnimationFrame(updateSmartSidebar);
+    }
+
+    function openHistoryRun(id) {
+      const history = getHistory();
+      const run = history.find(item => item.id === id);
+      if (run) showRun(run);
+    }
+
+    clearHistoryBtn.addEventListener("click", () => {
+      if (!confirm("Clear all saved analysis history?")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      renderHistory();
+    });
+
+    clearCurrentBtn.addEventListener("click", () => {
+      resultContent.innerHTML = "";
+      triageSummary.innerHTML = "";
+      triageSummary.classList.add("hidden");
+      emptyBox.classList.remove("hidden");
+      clearCurrentBtn.classList.add("hidden");
+      currentRunLabel.textContent = "No analysis selected.";
+      statFetched.textContent = "0";
+      statFiltered.textContent = "0";
+      statOpps.textContent = "0";
+      statScore.textContent = "0";
+      showStatus("");
+      renderEmptyInputBox();
+      requestAnimationFrame(updateSmartSidebar);
+    });
+
+    if (toggleGmailInputsBtn) {
+      toggleGmailInputsBtn.addEventListener("click", () => {
+        const isHidden = gmailInputList.classList.toggle("hidden");
+        gmailInputList.classList.toggle("opacity-0", isHidden);
+        gmailInputList.classList.toggle("opacity-100", !isHidden);
+
+        toggleGmailInputsBtn.textContent = isHidden ? "Expand" : "Collapse";
+        requestAnimationFrame(updateSmartSidebar);
+      });
+    }
+
+    function loadServerGmailRunIfPresent() {
+      const opportunities = cleanArray(SERVER_OPPORTUNITIES);
+      const emailItems = cleanArray(SERVER_EMAIL_ITEMS);
+
+      const hasServerData =
+        opportunities.length ||
+        emailItems.length ||
+        SERVER_ERROR ||
+        SERVER_WARNING ||
+        SERVER_NOTE ||
+        SERVER_MODE;
+
+      if (!hasServerData) {
+        renderEmptyInputBox();
+        requestAnimationFrame(updateSmartSidebar);
+        return;
+      }
+
+      const run = {
+        id: Date.now(),
+        source: "gmail",
+        createdAt: new Date().toLocaleString(),
+        textPreview: "Gmail connected analysis",
+        opportunities: opportunities,
+        inputEmails: emailItems,
+        mode: SERVER_MODE || "gmail_pipeline",
+        warning: SERVER_WARNING,
+        note: SERVER_NOTE,
+        error: SERVER_ERROR,
+        fetchedCount: SERVER_FETCHED_COUNT || emailItems.length,
+        filteredCount: SERVER_FILTERED_COUNT || 0,
+        sentToAiCount: SERVER_SENT_TO_AI_COUNT || 0
+      };
+
+      showRun(run);
+
+      const history = getHistory();
+      history.unshift(run);
+      saveHistory(history.slice(0, 20));
+
+      requestAnimationFrame(updateSmartSidebar);
+    }
+
+    function resetSmartSidebar() {
+      leftRail.style.minHeight = "";
+      leftRailInner.style.width = "";
+      leftRailInner.style.left = "";
+      leftRailInner.classList.remove(
+        "sidebar-fixed-bottom",
+        "sidebar-absolute-bottom"
+      );
+      leftRailInner.classList.add("sidebar-normal");
+    }
+
+    function updateSmartSidebar() {
+      if (!dashboardGrid || !leftRail || !leftRailInner) return;
+
+      if (window.innerWidth < 1024) {
+        resetSmartSidebar();
+        return;
+      }
+
+      const bottomGap = 24;
+      const scrollY = window.scrollY || window.pageYOffset;
+
+      resetSmartSidebar();
+
+      const railRect = leftRail.getBoundingClientRect();
+      const gridRect = dashboardGrid.getBoundingClientRect();
+
+      const railTop = railRect.top + scrollY;
+      const gridTop = gridRect.top + scrollY;
+      const gridBottom = gridTop + dashboardGrid.offsetHeight;
+
+      const innerHeight = leftRailInner.offsetHeight;
+      const railWidth = leftRail.offsetWidth;
+      const viewportHeight = window.innerHeight;
+
+      leftRail.style.minHeight = innerHeight + "px";
+      leftRailInner.style.width = railWidth + "px";
+
+      const lockStart = railTop + innerHeight - viewportHeight + bottomGap;
+      const lockEnd = gridBottom - viewportHeight + bottomGap;
+
+      if (innerHeight <= viewportHeight - bottomGap) {
+        const topGap = 96;
+        const topLockStart = railTop - topGap;
+        const topLockEnd = gridBottom - innerHeight - topGap;
+
+        if (scrollY < topLockStart) {
+          leftRailInner.classList.add("sidebar-normal");
+          return;
+        }
+
+        if (scrollY >= topLockEnd) {
+          leftRailInner.classList.remove("sidebar-normal");
+          leftRailInner.classList.add("sidebar-absolute-bottom");
+          return;
+        }
+
+        leftRailInner.classList.remove("sidebar-normal");
+        leftRailInner.classList.add("sidebar-fixed-bottom");
+        leftRailInner.style.bottom = "auto";
+        leftRailInner.style.top = topGap + "px";
+        leftRailInner.style.left = railRect.left + "px";
+        return;
+      }
+
+      if (scrollY < lockStart) {
+        leftRailInner.classList.add("sidebar-normal");
+        return;
+      }
+
+      if (scrollY >= lockEnd) {
+        leftRailInner.classList.remove("sidebar-normal");
+        leftRailInner.classList.add("sidebar-absolute-bottom");
+        return;
+      }
+
+      leftRailInner.classList.remove("sidebar-normal");
+      leftRailInner.classList.add("sidebar-fixed-bottom");
+      leftRailInner.style.top = "auto";
+      leftRailInner.style.bottom = bottomGap + "px";
+      leftRailInner.style.left = railRect.left + "px";
+    }
+
+    let ticking = false;
+
+    window.addEventListener("scroll", () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          updateSmartSidebar();
+          ticking = false;
+        });
+
+        ticking = true;
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      requestAnimationFrame(updateSmartSidebar);
+    });
+
+    renderHistory();
+    loadServerGmailRunIfPresent();
+    requestAnimationFrame(updateSmartSidebar);
+  </script>
+
+</body>
+</html>

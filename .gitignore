@@ -1,0 +1,12 @@
+.env
+client_secret.json
+token.json
+student_profiles.json
+
+__pycache__/
+*.pyc
+
+temp_uploads/
+Emails/
+
+*.mp4

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Madadgar — Email triage for students</title>
+<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='imgs/logob.ico') }}">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand: #0A66C2;
+    --brand-dark: #084d94;
+    --brand-deep: #052a52;
+    --brand-light: #2d83d9;
+    --brand-soft: #e8f0fa;
+    --ink: #0b1220;
+    --line: #e5e9f0;
+  }
+  * { -webkit-font-smoothing: antialiased; }
+  html, body { background: #ffffff; color: var(--ink); font-family: 'Inter', sans-serif; }
+  .serif { font-family: 'Instrument Serif', serif; letter-spacing: -0.01em; }
+
+  /* HERO — full blue, layered */
+  .hero {
+    position: relative;
+    background:
+      radial-gradient(ellipse 60% 80% at 100% 0%, rgba(45,131,217,0.45), transparent 55%),
+      radial-gradient(ellipse 70% 60% at 0% 100%, rgba(5,42,82,0.6), transparent 60%),
+      linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
+    overflow: hidden;
+  }
+  .hero-grid {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 30%, transparent 85%);
+  }
+  .hero-glow {
+    position: absolute; border-radius: 9999px; filter: blur(100px); pointer-events: none;
+  }
+
+  /* Top nav inside blue hero */
+  .nav-link-light { color: rgba(255,255,255,0.75); transition: color .2s ease; }
+  .nav-link-light:hover { color: white; }
+  .nav-link { color: #475569; transition: color .2s ease; }
+  .nav-link:hover { color: var(--ink); }
+
+  /* Buttons */
+  .btn-white {
+    background: white; color: var(--brand); transition: all .2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 8px 20px -8px rgba(0,0,0,0.2);
+  }
+  .btn-white:hover { background: #f0f6fc; transform: translateY(-1px); box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 12px 28px -8px rgba(0,0,0,0.25); }
+  .btn-outline-light {
+    background: transparent; color: white; border: 1px solid rgba(255,255,255,0.25); transition: all .2s ease;
+  }
+  .btn-outline-light:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.4); }
+
+  .btn-primary {
+    background: var(--brand); color: white; transition: background .2s ease, transform .1s ease;
+  }
+  .btn-primary:hover { background: var(--brand-dark); }
+  .btn-ghost {
+    background: white; color: var(--ink); border: 1px solid var(--line); transition: all .2s ease;
+  }
+  .btn-ghost:hover { border-color: #cbd5e1; }
+
+  /* Email priority bars */
+  .priority-high { background: #ef4444; }
+  .priority-med { background: #f59e0b; }
+  .priority-low { background: #94a3b8; }
+
+  /* Step + accents */
+  .step-num { font-family: 'Instrument Serif', serif; font-style: italic; color: var(--brand); }
+  .step-card { transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
+  .step-card:hover { border-color: #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.02), 0 8px 24px -12px rgba(10,102,194,0.15); transform: translateY(-2px); }
+
+  .email-row { transition: background .15s ease; }
+  .email-row:hover { background: #f8fafc; }
+
+  .accent-line { width: 32px; height: 2px; background: var(--brand); border-radius: 2px; }
+  .accent-line-light { width: 32px; height: 2px; background: rgba(255,255,255,0.6); border-radius: 2px; }
+
+  .cta-bg {
+    background:
+      radial-gradient(ellipse 80% 100% at 50% 0%, rgba(255,255,255,0.15), transparent 70%),
+      linear-gradient(135deg, var(--brand) 0%, var(--brand-dark) 100%);
+  }
+
+  details summary { list-style: none; cursor: pointer; }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] .faq-icon { transform: rotate(45deg); }
+  .faq-icon { transition: transform .25s ease; }
+
+  .stat-num { font-family: 'Instrument Serif', serif; }
+
+  /* Subtle floating animation for hero card */
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .float-anim { animation: float-slow 6s ease-in-out infinite; }
+</style>
+</head>
+<script>
+  const navbar = document.getElementById("navbar");
+
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 20) {
+      navbar.classList.add("bg-white", "shadow-md");
+      navbar.classList.remove("border-white/10");
+
+      // change text color on scroll
+      document.querySelectorAll(".nav-link-light").forEach(el => {
+        el.classList.remove("nav-link-light");
+        el.classList.add("nav-link");
+      });
+
+    } else {
+      navbar.classList.remove("bg-white", "shadow-md");
+      navbar.classList.add("border-white/10");
+
+      document.querySelectorAll(".nav-link").forEach(el => {
+        el.classList.remove("nav-link");
+        el.classList.add("nav-link-light");
+      });
+    }
+  });
+</script>
+<body>
+
+<!-- ============== HERO + NAV (full blue) ============== -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow" style="background: #2d83d9; width: 500px; height: 500px; top: -150px; right: -100px; opacity: 0.4;"></div>
+  <div class="hero-glow" style="background: #052a52; width: 450px; height: 450px; bottom: -200px; left: -150px; opacity: 0.6;"></div>
+<!-- Navbar -->
+<nav id="navbar"
+     class="fixed top-0 left-0 w-full z-50 transition-all duration-300"
+     style="
+       background:
+         radial-gradient(ellipse 60% 80% at 100% 0%, rgba(45,131,217,0.45), transparent 55%),
+         radial-gradient(ellipse 70% 60% at 0% 100%, rgba(5,42,82,0.6), transparent 60%),
+         linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
+       border-bottom: 1px solid rgba(255,255,255,0.1);
+     ">
+<div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+
+<a href="/" class="flex items-center">
+  <img src="{{ url_for('static', filename='imgs/logow.png') }}"
+       alt="Madadgar Logo"
+       class="h-20 w-auto">
+</a>
+    <!-- Links -->
+    <div class="hidden md:flex items-center gap-8 text-sm">
+      <a href="/" class="nav-link-light">Home</a>
+       <a href="/dashboard" target="_blank" class="nav-link-light">Dashboard</a>
+      <a href="/chatbot" target="_blank" class="nav-link-light">Chatbot</a>
+      <a href="#faq" class="nav-link-light">FAQ</a>
+         <a href="#about" class="nav-link-light">About Us</a>
+         <a href="#contact" class="nav-link-light">Contact</a>
+    </div>
+
+    <!-- Right -->
+    <div class="flex items-center gap-3">
+
+      <!-- Try Button -->
+      <a href="/input" target="_blank" rel="noopener noreferrer"
+         class="btn-white text-sm font-medium px-4 py-2 rounded-lg">
+        Try Madadgar
+      </a>
+
+      <!-- Profile Icon -->
+   <a href="{% if user_email %}/profile{% else %}/login{% endif %}" target="_blank"
+   class="w-9 h-9 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zM4 20a8 8 0 0116 0"
+                stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+
+      </a>
+
+      <!-- Logout -->
+      <a href="/logout"
+         class="hidden sm:inline text-sm nav-link-light">
+        Logout
+      </a>
+
+    </div>
+
+  </div>
+</nav>
+
+  <!-- Hero content -->
+  <div class="relative z-10 max-w-6xl mx-auto px-6 pt-20 pb-28 md:pt-28 md:pb-36 grid lg:grid-cols-12 gap-14 items-center">
+
+    <div class="lg:col-span-6 text-white">
+      <!-- Eyebrow -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 backdrop-blur-sm text-xs font-medium mb-7 text-white/90">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-60"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+        </span>
+        Now in private beta · For students with a .edu email
+      </div>
+
+      <!-- Headline -->
+      <h1 class="text-5xl md:text-[64px] font-medium leading-[1.04] tracking-tight mb-6">
+        The inbox <br/>
+        you've been <span class="serif italic font-normal text-blue-200">avoiding,</span><br/>
+        finally <span class="serif italic font-normal text-blue-200">handled.</span>
+      </h1>
+
+      <p class="text-lg text-blue-100/80 leading-relaxed mb-10 max-w-lg">
+        Madadgar reads up to 20 student emails at a time, ranks them by what's actually urgent for <em>you</em>, and gives you the next move. No more inbox dread.
+      </p>
+
+      <div class="flex flex-wrap gap-3 mb-12">
+        <a href="#" class="btn-white px-6 py-3.5 rounded-lg font-medium text-sm inline-flex items-center gap-2">
+          Triage my inbox
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8m0 0L7.5 3.5M11 7L7.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </a>
+        <a href="#how" class="btn-outline-light px-6 py-3.5 rounded-lg font-medium text-sm">See how it works</a>
+      </div>
+
+      <!-- Mini stats inline -->
+      <div class="grid grid-cols-3 gap-6 max-w-md pt-8 border-t border-white/15">
+        <div>
+          <div class="stat-num text-3xl text-white mb-1">4<span class="text-xl text-blue-200">s</span></div>
+          <div class="text-[11px] text-blue-100/60 uppercase tracking-wider">Avg. sort time</div>
+        </div>
+        <div>
+          <div class="stat-num text-3xl text-white mb-1">94<span class="text-xl text-blue-200">%</span></div>
+          <div class="text-[11px] text-blue-100/60 uppercase tracking-wider">Accuracy</div>
+        </div>
+        <div>
+          <div class="stat-num text-3xl text-white mb-1">2.4<span class="text-xl text-blue-200">k</span></div>
+          <div class="text-[11px] text-blue-100/60 uppercase tracking-wider">Students</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero visual -->
+    <div class="lg:col-span-6 relative">
+      <!-- Backdrop card peeking behind -->
+      <div class="absolute inset-0 rounded-2xl bg-white/5 border border-white/10 transform rotate-2 translate-x-4 translate-y-4"></div>
+
+      <div class="float-anim bg-white rounded-2xl shadow-[0_30px_80px_-20px_rgba(0,0,0,0.5)] overflow-hidden relative">
+        <!-- Header -->
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-300"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-300"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-green-300"></span>
+          </div>
+          <div class="text-xs text-slate-400 font-medium">Triage results · 12 emails</div>
+          <div class="text-xs font-semibold px-2 py-0.5 rounded-full" style="color: var(--brand); background: var(--brand-soft);">Sorted</div>
+        </div>
+
+        <div class="email-row px-5 py-4 border-b border-slate-50 flex items-start gap-3">
+          <div class="w-1 self-stretch rounded priority-high mt-0.5"></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-[10px] font-semibold text-red-600 uppercase tracking-wider">Act today</span>
+              <span class="text-xs text-slate-400">2h ago</span>
+            </div>
+            <div class="text-sm font-semibold truncate text-slate-900">Financial Aid · Missing document</div>
+            <div class="text-xs text-slate-500 truncate mt-0.5">Submit your tax form by Friday or your aid will be paused.</div>
+          </div>
+        </div>
+
+        <div class="email-row px-5 py-4 border-b border-slate-50 flex items-start gap-3">
+          <div class="w-1 self-stretch rounded priority-high mt-0.5"></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-[10px] font-semibold text-red-600 uppercase tracking-wider">Act today</span>
+              <span class="text-xs text-slate-400">5h ago</span>
+            </div>
+            <div class="text-sm font-semibold truncate text-slate-900">Prof. Ahmed · CS401 assignment extension</div>
+            <div class="text-xs text-slate-500 truncate mt-0.5">Reply by tonight to get the 48-hour extension you asked for.</div>
+          </div>
+        </div>
+
+        <div class="email-row px-5 py-4 border-b border-slate-50 flex items-start gap-3">
+          <div class="w-1 self-stretch rounded priority-med mt-0.5"></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-[10px] font-semibold text-amber-600 uppercase tracking-wider">This week</span>
+              <span class="text-xs text-slate-400">1d ago</span>
+            </div>
+            <div class="text-sm font-semibold truncate text-slate-900">Internship · Confirmation needed</div>
+            <div class="text-xs text-slate-500 truncate mt-0.5">Confirm your slot for the on-campus interview before Sunday.</div>
+          </div>
+        </div>
+
+        <div class="email-row px-5 py-4 border-b border-slate-50 flex items-start gap-3">
+          <div class="w-1 self-stretch rounded priority-med mt-0.5"></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-[10px] font-semibold text-amber-600 uppercase tracking-wider">This week</span>
+              <span class="text-xs text-slate-400">1d ago</span>
+            </div>
+            <div class="text-sm font-semibold truncate text-slate-900">Library · Two books due Thursday</div>
+            <div class="text-xs text-slate-500 truncate mt-0.5">Renew online or return to avoid the late fee.</div>
+          </div>
+        </div>
+
+        <div class="email-row px-5 py-4 flex items-start gap-3">
+          <div class="w-1 self-stretch rounded priority-low mt-0.5"></div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Can wait</span>
+              <span class="text-xs text-slate-400">2d ago</span>
+            </div>
+            <div class="text-sm font-medium truncate text-slate-600">Career fair · Save the date</div>
+            <div class="text-xs text-slate-400 truncate mt-0.5">Informational. No action required this week.</div>
+          </div>
+        </div>
+
+        <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-500 text-center font-medium">
+          + 7 more · all sorted
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logo strip -->
+  <div class="relative z-10 border-t border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="text-xs text-blue-100/60 uppercase tracking-widest font-medium">Trusted by students at</div>
+      <div class="flex items-center gap-8 md:gap-12 text-white/50 text-base md:text-lg font-semibold">
+        <span class="serif italic">LUMS</span>
+        <span class="serif italic">NUST</span>
+        <span class="serif italic">FAST</span>
+        <span class="serif italic">IBA</span>
+        <span class="serif italic">GIKI</span>
+        <span class="serif italic hidden md:inline">Habib</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== HOW IT WORKS ============== -->
+<section id="how" class="py-24 md:py-32">
+  <div class="max-w-6xl mx-auto px-6">
+
+    <div class="max-w-2xl mb-16">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="accent-line"></div>
+        <span class="text-xs font-semibold tracking-widest uppercase" style="color: var(--brand);">How it works</span>
+      </div>
+      <h2 class="text-4xl md:text-5xl font-medium leading-tight tracking-tight">
+        Three steps. <span class="serif italic font-normal text-slate-500">No more inbox dread.</span>
+      </h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-5">
+
+      <div class="step-card bg-white border border-slate-200 rounded-2xl p-7">
+        <div class="flex items-center justify-between mb-6">
+          <span class="step-num text-4xl italic">01</span>
+          <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4h12v10H3zM3 4l6 5 6-5" stroke="#0A66C2" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <h3 class="text-lg font-semibold mb-2">Drop in your emails</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">
+          Paste up to 20 emails — forwarded, copied, or pulled from your student account. Madadgar handles the rest.
+        </p>
+      </div>
+
+      <div class="step-card bg-white border border-slate-200 rounded-2xl p-7">
+        <div class="flex items-center justify-between mb-6">
+          <span class="step-num text-4xl italic">02</span>
+          <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 14V8M9 14V4M15 14v-3" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <h3 class="text-lg font-semibold mb-2">We rank by urgency</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">
+          Using your profile — courses, deadlines, role — each email gets scored: act today, this week, or can wait.
+        </p>
+      </div>
+
+      <div class="step-card bg-white border border-slate-200 rounded-2xl p-7">
+        <div class="flex items-center justify-between mb-6">
+          <span class="step-num text-4xl italic">03</span>
+          <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 9l3 3 7-7" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <h3 class="text-lg font-semibold mb-2">You get a clear plan</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">
+          Each email comes with a one-line action. Stuck? The built-in chatbot guides you — with guardrails to keep advice safe and on-topic.
+        </p>
+      </div>
+    </div>
+
+    <!-- Chatbot footnote -->
+    <div class="mt-12 bg-gradient-to-br from-blue-50 to-white border border-blue-100 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start">
+      <div class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style="background: var(--brand);">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 5h14v9H8l-3 3v-3H3z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><circle cx="8" cy="9.5" r="0.8" fill="white"/><circle cx="12" cy="9.5" r="0.8" fill="white"/></svg>
+      </div>
+      <div class="flex-1">
+        <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+          <h4 class="font-semibold">Guided chatbot, with guardrails</h4>
+          <span class="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded-full" style="background: var(--brand-soft); color: var(--brand);">Included</span>
+        </div>
+        <p class="text-sm text-slate-600 leading-relaxed">
+          Ask follow-ups in plain language — "How do I reply to my professor?" or "Is this email a scam?" Madadgar stays inside what it knows: your emails, your school, your context. No off-topic spirals, no sketchy advice.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============== USE CASES ============== -->
+<section id="use-cases" class="py-24 md:py-28 bg-slate-50/50 border-y border-slate-100">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="max-w-2xl mb-14">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="accent-line"></div>
+        <span class="text-xs font-semibold tracking-widest uppercase" style="color: var(--brand);">Use cases</span>
+      </div>
+      <h2 class="text-4xl md:text-5xl font-medium leading-tight tracking-tight">
+        Built for the way <span class="serif italic font-normal" style="color: var(--brand);">students actually work.</span>
+      </h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div class="bg-white border border-slate-200 rounded-2xl p-7">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-5">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 5h12v8H3zM6 9h6M6 11h4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="font-semibold mb-2">Catch deadline emails fast</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">Financial aid, scholarship renewals, course registration — Madadgar surfaces the time-sensitive ones first so you never miss a window.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-7">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-5">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3a4 4 0 100 8 4 4 0 000-8zM3 15c0-2.5 2.5-4 6-4s6 1.5 6 4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="font-semibold mb-2">Reply to professors confidently</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">Get a clear sense of which faculty emails actually need a response, and what tone to use. The chatbot can draft a reply if you want.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-7">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-5">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4h12v10H3zM3 7h12M6 11h3" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <h3 class="font-semibold mb-2">Spot internship & job replies</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">Confirmations, interview slots, take-home assignments — career mail gets flagged separately so it doesn't drown in newsletters.</p>
+      </div>
+
+      <div class="bg-white border border-slate-200 rounded-2xl p-7">
+        <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center mb-5">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2L3 5v4c0 3.5 2.5 6.5 6 7.5 3.5-1 6-4 6-7.5V5L9 2z" stroke="#0A66C2" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </div>
+        <h3 class="font-semibold mb-2">Catch phishing and scams</h3>
+        <p class="text-sm text-slate-600 leading-relaxed">Students are heavily targeted. Madadgar flags suspicious sender patterns, fake job offers, and credential-grab attempts before you click.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== TESTIMONIAL ============== -->
+<section class="py-24 md:py-28">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+    <svg class="mx-auto mb-8 opacity-30" width="36" height="28" viewBox="0 0 36 28" fill="none"><path d="M0 28V18C0 8 6 0 16 0v6c-5 0-8 4-8 10h8v12H0zm20 0V18c0-10 6-18 16-18v6c-5 0-8 4-8 10h8v12H20z" fill="#0A66C2"/></svg>
+    <p class="serif text-3xl md:text-4xl leading-snug mb-8 italic text-slate-700">
+      I went from missing financial aid deadlines twice a semester to clearing my inbox in five minutes a day. It's the only tool I open before class.
+    </p>
+    <div class="flex items-center justify-center gap-4">
+      <div class="w-12 h-12 rounded-full" style="background: linear-gradient(135deg, #0A66C2, #2d83d9);"></div>
+      <div class="text-left">
+        <div class="font-semibold">Hira S.</div>
+        <div class="text-sm text-slate-500">Junior, Computer Science · LUMS</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FAQ ============== -->
+<section id="faq" class="py-24 md:py-28 bg-slate-50/50 border-t border-slate-100">
+  <div class="max-w-3xl mx-auto px-6">
+    <div class="text-center mb-14">
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <div class="accent-line"></div>
+        <span class="text-xs font-semibold tracking-widest uppercase" style="color: var(--brand);">FAQ</span>
+        <div class="accent-line"></div>
+      </div>
+      <h2 class="text-4xl md:text-5xl font-medium leading-tight tracking-tight">
+        Quick <span class="serif italic font-normal" style="color: var(--brand);">questions.</span>
+      </h2>
+    </div>
+
+    <div class="space-y-3">
+      <details class="group bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between p-5 font-medium">
+          <span>Do I need to connect my email account?</span>
+          <span class="faq-icon text-2xl text-slate-400">+</span>
+        </summary>
+        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">
+          No. You can simply paste up to 20 emails as text. We're working on optional Gmail and Outlook integrations for next term — until then, copy-paste keeps things private and zero-setup.
+        </div>
+      </details>
+
+      <details class="group bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between p-5 font-medium">
+          <span>How does the ranking actually work?</span>
+          <span class="faq-icon text-2xl text-slate-400">+</span>
+        </summary>
+        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">
+          Each email is scored against your student profile — current courses, role, key deadlines, and history of what you've marked important. Urgency tiers (Act today / This week / Can wait) are based on date sensitivity, sender authority, and required action.
+        </div>
+      </details>
+
+      <details class="group bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between p-5 font-medium">
+          <span>Is my email data private?</span>
+          <span class="faq-icon text-2xl text-slate-400">+</span>
+        </summary>
+        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">
+          Yes. Emails are processed in-session and not stored. We never train on student content. Your profile stays on your device unless you opt into sync.
+        </div>
+      </details>
+
+      <details class="group bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between p-5 font-medium">
+          <span>What are the chatbot's guardrails?</span>
+          <span class="faq-icon text-2xl text-slate-400">+</span>
+        </summary>
+        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">
+          The chatbot only answers questions grounded in your emails and student context. It declines off-topic asks, won't give legal/medical/financial advice, and flags anything that looks like phishing or coercion rather than helping you respond to it.
+        </div>
+      </details>
+
+      <details class="group bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <summary class="flex items-center justify-between p-5 font-medium">
+          <span>Is it really free?</span>
+          <span class="faq-icon text-2xl text-slate-400">+</span>
+        </summary>
+        <div class="px-5 pb-5 text-sm text-slate-600 leading-relaxed">
+          Free for individual students with a verified .edu address during beta. We'll introduce paid plans for institutions and heavy users later — your beta access stays free.
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============== CTA ============== -->
+<section class="py-24 md:py-28">
+  <div class="max-w-5xl mx-auto px-6">
+    <div class="cta-bg rounded-3xl p-10 md:p-16 text-center text-white relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-64 h-64 rounded-full" style="background: rgba(255,255,255,0.06); filter: blur(60px); transform: translate(30%, -30%);"></div>
+      <div class="absolute bottom-0 left-0 w-64 h-64 rounded-full" style="background: rgba(255,255,255,0.04); filter: blur(60px); transform: translate(-30%, 30%);"></div>
+
+      <div class="relative">
+        <h2 class="text-4xl md:text-5xl font-medium leading-tight tracking-tight mb-4">
+          Stop scrolling your inbox. <br/>
+          <span class="serif italic font-normal opacity-90">Start finishing your day.</span>
+        </h2>
+        <p class="text-blue-100 max-w-lg mx-auto mb-8 leading-relaxed">
+          Free for students with a .edu email. No credit card. No setup. Triage your first 20 emails in under a minute.
+        </p>
+        <div class="flex flex-wrap gap-3 justify-center">
+          <a href="#" class="bg-white px-6 py-3 rounded-lg font-medium text-sm hover:bg-slate-100 transition" style="color: var(--brand);">
+            Get started — it's free
+          </a>
+          <a href="#" class="border border-white/30 px-6 py-3 rounded-lg font-medium text-sm hover:bg-white/10 transition">
+            For schools & advisors
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== ABOUT US ============== -->
+<section id="about" class="py-24 md:py-28 border-t border-slate-100">
+  <div class="max-w-5xl mx-auto px-6">
+
+    <div class="text-center mb-14">
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <div class="accent-line"></div>
+        <span class="text-xs font-semibold tracking-widest uppercase" style="color: var(--brand);">About Us</span>
+        <div class="accent-line"></div>
+      </div>
+
+      <h2 class="text-4xl md:text-5xl font-medium leading-tight tracking-tight">
+        Built by students, <span class="serif italic font-normal" style="color: var(--brand);">for students.</span>
+      </h2>
+    </div>
+
+    <div class="text-center max-w-2xl mx-auto mb-10">
+      <p class="text-slate-600 leading-relaxed text-lg">
+        <strong>Madadgar</strong> was created to solve a problem every student faces — overwhelming emails, missed deadlines, and lost opportunities.
+        We built a system that intelligently analyzes, ranks, and guides students so they can focus on what truly matters.
+      </p>
+    </div>
+
+    <!-- Founders -->
+    <div class="grid md:grid-cols-2 gap-6 mt-10">
+
+      <!-- Anamta -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-7 text-center">
+        <div class="w-14 h-14 mx-auto rounded-full mb-4 flex items-center justify-center text-white text-lg font-bold"
+             style="background: linear-gradient(135deg, #0A66C2, #2d83d9);">
+          A
+        </div>
+        <h3 class="font-semibold text-lg mb-1">Anamta Gohar</h3>
+        <p class="text-sm text-slate-500 mb-4">Co-Founder · Computer Science Student</p>
+
+        <div class="flex justify-center gap-4 text-sm">
+          <a href="mailto:anamta.gohar25@gmail.com" class="hover:text-blue-600 transition">
+            Email
+          </a>
+          <a href="https://github.com/anamta-JINX" target="_blank" class="hover:text-blue-600 transition">
+            GitHub
+          </a>
+          <a href="https://www.linkedin.com/in/anamta-gohar3006" target="_blank" class="hover:text-blue-600 transition">
+            LinkedIn
+          </a>
+        </div>
+      </div>
+
+      <!-- Eman -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-7 text-center">
+        <div class="w-14 h-14 mx-auto rounded-full mb-4 flex items-center justify-center text-white text-lg font-bold"
+             style="background: linear-gradient(135deg, #0A66C2, #2d83d9);">
+          E
+        </div>
+        <h3 class="font-semibold text-lg mb-1">Eman Ijaz</h3>
+        <p class="text-sm text-slate-500 mb-4">Co-Founder · Computer Science Student</p>
+
+        <p class="text-sm text-slate-500">
+          Passionate about building intelligent systems that simplify student life and improve access to opportunities.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+<!-- ============== CONTACT US ============== -->
+<section id="contact" class="py-24 md:py-28 border-t border-slate-100 bg-slate-50/50">
+  <div class="max-w-4xl mx-auto px-6 text-center">
+
+    <!-- Heading -->
+    <div class="mb-12">
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <div class="accent-line"></div>
+        <span class="text-xs font-semibold tracking-widest uppercase" style="color: var(--brand);">
+          Contact Us
+        </span>
+        <div class="accent-line"></div>
+      </div>
+
+      <h2 class="text-4xl md:text-5xl font-medium leading-tight tracking-tight">
+        Let’s <span class="serif italic font-normal" style="color: var(--brand);">connect.</span>
+      </h2>
+
+      <p class="text-slate-600 mt-4 max-w-xl mx-auto">
+        Have questions, feedback, or ideas? Reach out — we’d love to hear from you.
+      </p>
+    </div>
+
+    <!-- Contact Cards -->
+    <div class="grid md:grid-cols-2 gap-6">
+
+      <!-- Email -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center hover:shadow-md transition">
+        <div class="w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-4"
+             style="background: var(--brand-soft);">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14v10H3zM3 5l7 5 7-5"
+                  stroke="#0A66C2" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <h3 class="font-semibold mb-1">Email</h3>
+        <p class="text-sm text-slate-500 mb-3">For queries & support</p>
+
+        <a href="mailto:anamta.gohar25@gmail.com"
+           class="text-sm font-medium text-blue-600 hover:underline">
+          anamta.gohar25@gmail.com
+        </a>
+      </div>
+
+      <!-- GitHub -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center hover:shadow-md transition">
+        <div class="w-12 h-12 mx-auto rounded-xl flex items-center justify-center mb-4"
+             style="background: var(--brand-soft);">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2C5.6 2 2 5.6 2 10a8 8 0 005.4 7.6c.4.1.6-.2.6-.4v-1.5c-2.2.5-2.7-1-2.7-1-.4-1-.9-1.3-.9-1.3-.7-.5.1-.5.1-.5.8.1 1.2.8 1.2.8.7 1.2 1.8.9 2.2.7.1-.5.3-.9.5-1.1-1.8-.2-3.7-.9-3.7-4a3.1 3.1 0 01.8-2.1 2.9 2.9 0 01.1-2s.7-.2 2.2.8a7.7 7.7 0 014 0c1.5-1 2.2-.8 2.2-.8.4 1 .1 2 .1 2a3.1 3.1 0 01.8 2.1c0 3.1-1.9 3.8-3.7 4 .3.3.5.7.5 1.5v2.2c0 .2.2.5.6.4A8 8 0 0018 10c0-4.4-3.6-8-8-8z"
+                  fill="#0A66C2"/>
+          </svg>
+        </div>
+
+        <h3 class="font-semibold mb-1">GitHub</h3>
+        <p class="text-sm text-slate-500 mb-3">Explore the project</p>
+
+        <a href="https://github.com/anamta-JINX"
+           target="_blank"
+           class="text-sm font-medium text-blue-600 hover:underline">
+          github.com/anamta-JINX
+        </a>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+<!-- ============== FOOTER (FINAL) ============== -->
+<footer class="py-16 text-white text-center"
+        style="
+          background:
+            radial-gradient(ellipse 80% 100% at 50% 0%, rgba(255,255,255,0.1), transparent 70%),
+            linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
+        ">
+
+  <div class="max-w-4xl mx-auto px-6 flex flex-col items-center">
+
+    <!-- Logo (CENTERED) -->
+    <a href="/" class="flex justify-center mb-4">
+      <img src="{{ url_for('static', filename='imgs/logow.png') }}"
+           alt="Madadgar Logo"
+           class="h-20 w-auto">
+    </a>
+
+    <!-- Brand Name -->
+    <h3 class="serif text-2xl mb-2">Madadgar</h3>
+
+    <!-- Description -->
+    <p class="text-sm text-blue-100/80 max-w-md mb-8">
+      AI-powered student assistant helping you manage emails, deadlines,
+      and opportunities — all in one place.
+    </p>
+
+    <!-- Links -->
+    <div class="flex justify-center gap-8 text-sm mb-8">
+      <a href="#" class="text-blue-100/80 hover:text-white transition">Privacy</a>
+      <a href="#" class="text-blue-100/80 hover:text-white transition">Terms</a>
+      <a href="#" class="text-blue-100/80 hover:text-white transition">Contact</a>
+    </div>
+
+    <!-- Divider -->
+    <div class="w-full max-w-md h-px bg-white/10 mb-6"></div>
+
+    <!-- Bottom -->
+    <p class="text-xs text-blue-100/60">
+      © 2026 Madadgar · Built for students, by students
+    </p>
+
+  </div>
+</footer>
+
+</body>
+</html>
