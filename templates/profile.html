@@ -65,13 +65,54 @@
         </svg>
       </a>
 
-      <a href="/logout" class="hidden sm:inline text-sm nav-link-light">
+      <a href="/logout" id="navLogoutBtn" class="hidden sm:inline text-sm nav-link-light">
         Logout
       </a>
     </div>
 
   </div>
 </nav>
+
+<!-- ================= LOGOUT CONFIRMATION MODAL ================= -->
+<div id="logoutModal"
+     class="hidden fixed inset-0 z-[100] items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+     aria-hidden="true"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="logoutModalTitle">
+
+  <div class="bg-white rounded-3xl shadow-2xl border border-blue-100 max-w-md w-full p-7">
+
+    <div class="flex items-start gap-4 mb-5">
+      <div class="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M15 16l4-4m0 0l-4-4m4 4H9M13 21H6a2 2 0 01-2-2V5a2 2 0 012-2h7"
+                stroke="#dc2626" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h3 id="logoutModalTitle" class="text-lg font-bold text-gray-900">Log out of Madadgar?</h3>
+        <p class="text-sm text-gray-500 mt-1">
+          You'll need to sign in again to access your profile, chatbot, and saved opportunities.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
+      <button id="cancelLogoutBtn"
+              type="button"
+              class="px-5 py-2.5 rounded-xl font-semibold border border-gray-200 text-gray-700 hover:bg-gray-50 transition">
+        Cancel
+      </button>
+      <a id="confirmLogoutBtn"
+         href="/logout"
+         class="px-5 py-2.5 rounded-xl font-semibold bg-red-500 text-white hover:bg-red-600 transition shadow-lg shadow-red-200 text-center">
+        Yes, log out
+      </a>
+    </div>
+
+  </div>
+</div>
 
 <main class="max-w-5xl mx-auto px-4 pt-28 pb-10">
 
@@ -576,6 +617,10 @@
     white-space: pre-wrap;
     word-break: break-word;
   }
+
+  #logoutModal.show {
+    display: flex;
+  }
 </style>
 
 <script>
@@ -596,6 +641,47 @@
 
   const prevStepBtn = document.getElementById("prevStepBtn");
   const nextStepBtn = document.getElementById("nextStepBtn");
+
+  // ---------- Logout confirmation ----------
+  const navLogoutBtn = document.getElementById("navLogoutBtn");
+  const logoutModal = document.getElementById("logoutModal");
+  const cancelLogoutBtn = document.getElementById("cancelLogoutBtn");
+  const confirmLogoutBtn = document.getElementById("confirmLogoutBtn");
+
+  function openLogoutModal() {
+    logoutModal.classList.add("show");
+    logoutModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    // Focus the cancel button so Enter doesn't accidentally log out
+    setTimeout(() => cancelLogoutBtn.focus(), 0);
+  }
+
+  function closeLogoutModal() {
+    logoutModal.classList.remove("show");
+    logoutModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  if (navLogoutBtn) {
+    navLogoutBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      openLogoutModal();
+    });
+  }
+
+  cancelLogoutBtn.addEventListener("click", closeLogoutModal);
+
+  // Click on backdrop closes the modal
+  logoutModal.addEventListener("click", function (e) {
+    if (e.target === logoutModal) closeLogoutModal();
+  });
+
+  // Escape key closes the modal
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && logoutModal.classList.contains("show")) {
+      closeLogoutModal();
+    }
+  });
 
   const SERVER_LOGGED_IN_EMAIL = "{{ user_email or '' }}";
 

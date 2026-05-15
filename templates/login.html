@@ -23,6 +23,20 @@
       }
     };
   </script>
+
+  <style>
+    .validation-error {
+      color: #dc2626;
+      font-size: 0.8125rem;
+      margin-top: 0.375rem;
+    }
+    .input-invalid {
+      border-color: #dc2626 !important;
+    }
+    .input-invalid:focus {
+      box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+    }
+  </style>
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-madadgar-light via-white to-blue-100 flex items-center justify-center px-4">
@@ -52,20 +66,22 @@
     </div>
 
     <!-- ================= LOGIN FORM ================= -->
-    <form id="loginForm" method="POST" action="/login" class="space-y-5">
+    <form id="loginForm" method="POST" action="/login" class="space-y-5" novalidate>
 
       <div>
         <label class="block text-sm mb-2">Email</label>
-        <input type="email" name="email" required
+        <input type="email" name="email"
           placeholder="Enter email"
           class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+        <div id="loginEmailError" class="validation-error hidden"></div>
       </div>
 
       <div>
         <label class="block text-sm mb-2">Password</label>
-        <input type="password" name="password" required
+        <input type="password" name="password"
           placeholder="Enter password"
           class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+        <div id="loginPasswordError" class="validation-error hidden"></div>
       </div>
 
       <div class="flex justify-between text-sm">
@@ -82,27 +98,38 @@
     </form>
 
     <!-- ================= SIGNUP FORM ================= -->
-    <form id="signupForm" method="POST" action="/signup" class="space-y-5 hidden">
+    <form id="signupForm" method="POST" action="/signup" class="space-y-5 hidden" novalidate>
 
       <div>
         <label class="block text-sm mb-2">Full Name</label>
-        <input type="text" name="name" required
+        <input type="text" name="name"
           placeholder="Enter name"
           class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+        <div id="signupNameError" class="validation-error hidden"></div>
       </div>
 
       <div>
         <label class="block text-sm mb-2">Email</label>
-        <input type="email" name="email" required
+        <input type="email" name="email"
           placeholder="Enter email"
           class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+        <div id="signupEmailError" class="validation-error hidden"></div>
       </div>
 
       <div>
         <label class="block text-sm mb-2">Password</label>
-        <input type="password" name="password" required
+        <input type="password" name="password"
           placeholder="Create password"
           class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+        <div id="signupPasswordError" class="validation-error hidden"></div>
+      </div>
+
+      <div>
+        <label class="block text-sm mb-2">Confirm Password</label>
+        <input type="password" name="confirmPassword"
+          placeholder="Re-enter password"
+          class="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-madadgar-blue outline-none">
+        <div id="signupConfirmPasswordError" class="validation-error hidden"></div>
       </div>
 
       <button type="submit"
@@ -115,30 +142,150 @@
 
   <!-- ================= JS ================= -->
   <script>
+    // Switch between login and signup forms
     function showForm(type) {
       const loginForm = document.getElementById("loginForm");
       const signupForm = document.getElementById("signupForm");
-
       const loginTab = document.getElementById("loginTab");
       const signupTab = document.getElementById("signupTab");
 
       if (type === "login") {
         loginForm.classList.remove("hidden");
         signupForm.classList.add("hidden");
-
         loginTab.classList.add("bg-white", "shadow", "text-madadgar-blue");
         signupTab.classList.remove("bg-white", "shadow", "text-madadgar-blue");
         signupTab.classList.add("text-gray-500");
-
       } else {
         signupForm.classList.remove("hidden");
         loginForm.classList.add("hidden");
-
         signupTab.classList.add("bg-white", "shadow", "text-madadgar-blue");
         loginTab.classList.remove("bg-white", "shadow", "text-madadgar-blue");
         loginTab.classList.add("text-gray-500");
       }
     }
+
+    // ---------- Validation rules ----------
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+    function isStrongPassword(pw) {
+      return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{15,}$/.test(pw);
+    }
+
+    function setError(input, errorEl, message) {
+      if (message) {
+        errorEl.textContent = message;
+        errorEl.classList.remove("hidden");
+        input.classList.add("input-invalid");
+        return false;
+      }
+      errorEl.textContent = "";
+      errorEl.classList.add("hidden");
+      input.classList.remove("input-invalid");
+      return true;
+    }
+
+    // ---------- Validators ----------
+    function validateName(input, errorEl) {
+      const v = input.value.trim();
+      if (!v) return setError(input, errorEl, "Full name is required");
+      if (v.length < 2) return setError(input, errorEl, "Please enter your full name");
+      return setError(input, errorEl, "");
+    }
+
+    function validateEmail(input, errorEl) {
+      const v = input.value.trim();
+      if (!v) return setError(input, errorEl, "Email is required");
+      if (!EMAIL_REGEX.test(v)) return setError(input, errorEl, "Please enter a valid email address");
+      return setError(input, errorEl, "");
+    }
+
+    function validatePassword(input, errorEl, { strong = true } = {}) {
+      const v = input.value;
+      if (!v) return setError(input, errorEl, "Password is required");
+      if (strong && !isStrongPassword(v)) {
+        return setError(input, errorEl, "Must be 15+ characters with uppercase, lowercase, number, and symbol");
+      }
+      return setError(input, errorEl, "");
+    }
+
+    function validateConfirm(pwInput, confirmInput, errorEl) {
+      if (!confirmInput.value) return setError(confirmInput, errorEl, "Please confirm your password");
+      if (pwInput.value !== confirmInput.value) return setError(confirmInput, errorEl, "Passwords do not match");
+      return setError(confirmInput, errorEl, "");
+    }
+
+    // Validate on blur; re-validate on input only after the field has been touched
+    function bind(input, validator) {
+      let touched = false;
+      input.addEventListener("blur", () => { touched = true; validator(); });
+      input.addEventListener("input", () => { if (touched) validator(); });
+    }
+
+    /**
+     * Run validators in order. Stop at the first one that fails,
+     * focus that field, and don't show errors for the rest.
+     * This way the user sees one issue at a time instead of a wall of red.
+     */
+    function validateSequentially(checks) {
+      for (const { input, errorEl, run } of checks) {
+        const ok = run();
+        if (!ok) {
+          // Clear any leftover errors on fields after this one
+          checks
+            .slice(checks.indexOf(checks.find(c => c.input === input)) + 1)
+            .forEach(c => setError(c.input, c.errorEl, ""));
+          input.focus();
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // ---------- Login ----------
+    const loginForm = document.getElementById("loginForm");
+    const lEmail = loginForm.email;
+    const lPass  = loginForm.password;
+    const lEmailErr = document.getElementById("loginEmailError");
+    const lPassErr  = document.getElementById("loginPasswordError");
+
+    bind(lEmail, () => validateEmail(lEmail, lEmailErr));
+    bind(lPass,  () => validatePassword(lPass, lPassErr, { strong: false }));
+
+    loginForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const ok = validateSequentially([
+        { input: lEmail, errorEl: lEmailErr, run: () => validateEmail(lEmail, lEmailErr) },
+        { input: lPass,  errorEl: lPassErr,  run: () => validatePassword(lPass, lPassErr, { strong: false }) },
+      ]);
+      if (ok) loginForm.submit();
+    });
+
+    // ---------- Signup ----------
+    const signupForm = document.getElementById("signupForm");
+    const sName    = signupForm.name;
+    const sEmail   = signupForm.email;
+    const sPass    = signupForm.password;
+    const sConfirm = signupForm.confirmPassword;
+    const sNameErr    = document.getElementById("signupNameError");
+    const sEmailErr   = document.getElementById("signupEmailError");
+    const sPassErr    = document.getElementById("signupPasswordError");
+    const sConfirmErr = document.getElementById("signupConfirmPasswordError");
+
+    bind(sName,    () => validateName(sName, sNameErr));
+    bind(sEmail,   () => validateEmail(sEmail, sEmailErr));
+    bind(sPass,    () => validatePassword(sPass, sPassErr));
+    bind(sConfirm, () => validateConfirm(sPass, sConfirm, sConfirmErr));
+
+    signupForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const ok = validateSequentially([
+        { input: sName,    errorEl: sNameErr,    run: () => validateName(sName, sNameErr) },
+        { input: sEmail,   errorEl: sEmailErr,   run: () => validateEmail(sEmail, sEmailErr) },
+        { input: sPass,    errorEl: sPassErr,    run: () => validatePassword(sPass, sPassErr) },
+        { input: sConfirm, errorEl: sConfirmErr, run: () => validateConfirm(sPass, sConfirm, sConfirmErr) },
+      ]);
+      if (ok) signupForm.submit();
+    });
   </script>
 
 </body>
