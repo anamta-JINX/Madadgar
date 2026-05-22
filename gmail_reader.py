@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import base64
 from datetime import datetime
 from email.utils import parseaddr, parsedate_to_datetime
@@ -30,6 +31,125 @@ SCOPES = [
 REDIRECT_URI = "http://127.0.0.1:5000/gmail/callback"
 
 
+# ================= TOKEN PERSISTENCE (NEW) =================
+
+GMAIL_TOKEN_STORE = "gmail_tokens.json"
+
+
+def get_logged_in_email():
+    return (session.get("user_email") or "").strip().lower()
+
+
+def load_token_store():
+    if not os.path.exists(GMAIL_TOKEN_STORE):
+        return {}
+    try:
+        with open(GMAIL_TOKEN_STORE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_token_store(store):
+    try:
+        with open(GMAIL_TOKEN_STORE, "w", encoding="utf-8") as f:
+            json.dump(store, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print("TOKEN STORE SAVE ERROR:", e)
+
+
+def save_user_gmail_credentials(user_email: str, creds: Credentials):
+    """
+    Persist creds to disk so Gmail stays connected after refresh/restart.
+    """
+    user_email = (user_email or "").strip().lower()
+    if not user_email or not creds:
+        return
+
+    store = load_token_store()
+    store[user_email] = {
+        "token": creds.token,
+        "refresh_token": creds.refresh_token,
+        "token_uri": creds.token_uri,
+        "client_id": creds.client_id,
+        "client_secret": creds.client_secret,
+        "scopes": creds.scopes,
+    }
+    save_token_store(store)
+
+
+def load_user_gmail_credentials(user_email: str):
+    """
+    Load persisted creds from disk. Returns dict or None.
+    """
+    user_email = (user_email or "").strip().lower()
+    if not user_email:
+        return None
+
+    store = load_token_store()
+    creds_dict = store.get(user_email)
+
+    if not isinstance(creds_dict, dict):
+        return None
+
+    # minimal validation
+    if creds_dict.get("token_uri") and creds_dict.get("client_id") and creds_dict.get("scopes"):
+        return creds_dict
+
+    return None
+
+
+def ensure_gmail_credentials_in_session():
+    """
+    If session creds are missing, restore them from local store.
+    """
+    user_email = get_logged_in_email()
+    if not user_email:
+        return False
+
+    if "gmail_credentials" in session and isinstance(session.get("gmail_credentials"), dict):
+        return True
+
+    saved = load_user_gmail_credentials(user_email)
+    if saved:
+        session["gmail_credentials"] = saved
+        return True
+
+    return False
+
+
+def refresh_and_persist_if_needed(creds: Credentials):
+    """
+    Refreshes expired token (if possible) and persists updated token.
+    """
+    if not creds:
+        return creds
+
+    try:
+        if creds.expired and creds.refresh_token:
+            from google.auth.transport.requests import Request as GoogleRequest
+            creds.refresh(GoogleRequest())
+
+            # update session
+            session["gmail_credentials"] = {
+                "token": creds.token,
+                "refresh_token": creds.refresh_token,
+                "token_uri": creds.token_uri,
+                "client_id": creds.client_id,
+                "client_secret": creds.client_secret,
+                "scopes": creds.scopes,
+            }
+
+            # persist to disk
+            save_user_gmail_credentials(get_logged_in_email(), creds)
+
+    except Exception as e:
+        print("TOKEN REFRESH ERROR:", e)
+
+    return creds
+
+
 # ================= TOKEN-SAFE SETTINGS =================
 
 MODEL_PATH = "edu_detector_model.pkl"
@@ -51,10 +171,6 @@ GMAIL_SEARCH_QUERY = "in:anywhere newer_than:90d"
 
 
 # ================= BASIC HELPERS =================
-
-def get_logged_in_email():
-    return (session.get("user_email") or "").strip().lower()
-
 
 def get_header(headers, header_name):
     header_name = header_name.lower()
@@ -179,16 +295,6 @@ def safe_parse_email_date(date_text):
 
 
 def detect_deadline_urgency(text, email_date_text=""):
-    """
-    Adds urgency score.
-
-    Examples:
-    - quiz tomorrow -> urgent
-    - fee challan due today -> urgent
-    - assignment due this week -> medium/high
-    - scholarship deadline today -> critical
-    """
-
     text = (text or "").lower()
     today = get_today()
 
@@ -305,10 +411,6 @@ def detect_deadline_urgency(text, email_date_text=""):
 
 
 def detect_academic_task_score(text):
-    """
-    Scores student-specific academic/admin emails.
-    """
-
     text = (text or "").lower()
 
     score = 0
@@ -413,6 +515,9 @@ def gmail_callback_handler():
         "scopes": creds.scopes
     }
 
+    # NEW: persist to disk so it stays connected
+    save_user_gmail_credentials(get_logged_in_email(), creds)
+
     return True
 
 
@@ -423,11 +528,14 @@ def fetch_latest_emails(limit=GMAIL_FETCH_LIMIT):
     Fetches recent emails from Gmail.
     Does NOT call Groq.
     """
+    # NEW: restore creds from disk if session lost them
+    ensure_gmail_credentials_in_session()
 
     if "gmail_credentials" not in session:
         return []
 
     creds = Credentials(**session["gmail_credentials"])
+    creds = refresh_and_persist_if_needed(creds)
 
     service = build(
         "gmail",
@@ -466,7 +574,7 @@ def fetch_latest_emails(limit=GMAIL_FETCH_LIMIT):
             sender_name, sender_email = parseaddr(raw_sender)
 
             subject = get_header(headers, "subject") or "No subject"
-            date = get_header(headers, "date")
+            date_val = get_header(headers, "date")
 
             body = extract_body_from_payload(payload)
 
@@ -478,7 +586,7 @@ def fetch_latest_emails(limit=GMAIL_FETCH_LIMIT):
                 "sender": sender_email or raw_sender,
                 "sender_name": sender_name,
                 "subject": subject,
-                "date": date,
+                "date": date_val,
                 "body": body
             })
 
@@ -490,19 +598,9 @@ def fetch_latest_emails(limit=GMAIL_FETCH_LIMIT):
 
 
 # ================= PRE-AI EMAIL FILTERING =================
+# (Everything below is unchanged from your file.)
 
 def calculate_filter_score(email_item):
-    """
-    Local filtering before Groq.
-
-    Final score =
-    opportunity importance
-    + academic/admin importance
-    + urgency
-    + academic sender boost
-    - junk penalty
-    """
-
     subject = (email_item.get("subject") or "").lower()
     body = (email_item.get("body") or "").lower()
     sender = (email_item.get("sender") or "").lower()
@@ -711,10 +809,6 @@ def calculate_filter_score(email_item):
 
 
 def filter_emails_before_ai(email_items, max_items=AI_ANALYZE_LIMIT):
-    """
-    Sorts by urgency first, then final score.
-    """
-
     scored_emails = []
     filtered = []
 
@@ -757,14 +851,12 @@ def filter_emails_before_ai(email_items, max_items=AI_ANALYZE_LIMIT):
             "subject": item.get("subject", "No subject"),
             "date": item.get("date", ""),
             "body": shorten_text(item.get("body", "")),
-
             "filter_score": item.get("filter_score", 0),
             "importance_score": item.get("importance_score", 0),
             "urgency_score": item.get("urgency_score", 0),
             "academic_sender_score": item.get("academic_sender_score", 0),
             "junk_penalty": item.get("junk_penalty", 0),
             "priority_label": item.get("priority_label", "low"),
-
             "matched_keywords": item.get("matched_keywords", []),
             "edu_detector": item.get("edu_detector", {})
         })
@@ -773,6 +865,7 @@ def filter_emails_before_ai(email_items, max_items=AI_ANALYZE_LIMIT):
 
 
 # ================= BASIC FALLBACK OUTPUT =================
+# (unchanged)
 
 def build_basic_ranked_output(filtered_emails):
     ranked = []
@@ -988,6 +1081,21 @@ def rank_gmail_emails():
     fetched_emails = fetch_latest_emails(GMAIL_FETCH_LIMIT)
 
     if not fetched_emails:
+        # Distinguish between "not connected" vs "connected but empty"
+        ensure_gmail_credentials_in_session()
+        if "gmail_credentials" not in session:
+            return {
+                "success": True,
+                "mode": "gmail_not_connected",
+                "fetched_count": 0,
+                "filtered_count": 0,
+                "sent_to_ai_count": 0,
+                "email_items": [],
+                "ranked_output": {"ranked_opportunities": []},
+                "advisor_output": {"advisor_results": []},
+                "note": "Gmail is not connected for this account. Click 'Connect Gmail' once."
+            }
+
         return {
             "success": True,
             "mode": "gmail_connected_no_emails",

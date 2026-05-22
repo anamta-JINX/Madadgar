@@ -56,16 +56,95 @@ def profile_has_real_data(profile):
         "university",
         "skills",
         "interests",
-        "careerGoals"
+        "careerGoals",
     ]
 
     return any(str(profile.get(field, "")).strip() for field in important_fields)
+
+
+def _normalize_keywords_string(value: str) -> str:
+    """
+    Turns 'Python, ML / AI' into 'python ml ai' (space-separated),
+    good for keyword search.
+    """
+    text = str(value or "")
+    text = text.replace("/", " ").replace(",", " ").replace(";", " ")
+    text = " ".join(text.split())
+    return text.strip().lower()
+
+
+def _extract_keywords_list(value):
+    """
+    Accepts string or list; returns list of keyword tokens/phrases.
+    (We keep phrases if list is provided; string is tokenized.)
+    """
+    if not value:
+        return []
+
+    if isinstance(value, list):
+        return [str(x).strip() for x in value if str(x).strip()]
+
+    text = _normalize_keywords_string(value)
+    if not text:
+        return []
+
+    # Tokenize simple strings into keywords
+    parts = [p.strip() for p in text.split() if len(p.strip()) > 1]
+    return parts
+
+
+def build_profile_priority_keywords(profile):
+    """
+    Top-priority keywords for matching.
+    We include:
+      - university (full phrase)
+      - interests
+      - careerGoals
+      - skills
+      - degree
+      - lookingFor
+      - industry
+    Stored back into the profile as:
+      - profile["priorityUniversity"]
+      - profile["priorityKeywords"]
+    """
+    if not isinstance(profile, dict):
+        return {"priorityUniversity": "", "priorityKeywords": []}
+
+    uni = str(profile.get("university") or "").strip()
+
+    keywords = []
+    keywords.extend(_extract_keywords_list(profile.get("interests")))
+    keywords.extend(_extract_keywords_list(profile.get("careerGoals")))
+    keywords.extend(_extract_keywords_list(profile.get("skills")))
+    keywords.extend(_extract_keywords_list(profile.get("degree")))
+    keywords.extend(_extract_keywords_list(profile.get("lookingFor")))
+    keywords.extend(_extract_keywords_list(profile.get("industry")))
+
+    # De-dupe while preserving order (case-insensitive)
+    seen = set()
+    deduped = []
+    for k in keywords:
+        kk = str(k).strip()
+        if not kk:
+            continue
+        key = kk.lower()
+        if key not in seen:
+            seen.add(key)
+            deduped.append(kk)
+
+    return {"priorityUniversity": uni, "priorityKeywords": deduped}
 
 
 def save_student_profile(profile):
     """
     Saves/updates only the profile for the logged-in email.
     It does NOT overwrite or return another user's profile.
+
+    Updated:
+    - computes & stores top-priority matching fields:
+        profile["priorityUniversity"]
+        profile["priorityKeywords"]
     """
 
     if not isinstance(profile, dict):
@@ -83,6 +162,11 @@ def save_student_profile(profile):
 
     if not profile.get("createdAt"):
         profile["createdAt"] = profile["updatedAt"]
+
+    # Build & persist priority fields
+    priority = build_profile_priority_keywords(profile)
+    profile["priorityUniversity"] = priority["priorityUniversity"]
+    profile["priorityKeywords"] = priority["priorityKeywords"]
 
     cleaned_profiles = []
 
@@ -114,15 +198,21 @@ def get_latest_profile():
 
     data = load_profiles()
 
-    valid_profiles = [
-        p for p in data
-        if profile_has_real_data(p)
-    ]
+    valid_profiles = [p for p in data if profile_has_real_data(p)]
 
     if not valid_profiles:
         return None
 
-    return valid_profiles[-1]
+    profile = valid_profiles[-1]
+
+    # Ensure priority fields exist even for older saved profiles
+    if isinstance(profile, dict):
+        if "priorityUniversity" not in profile or "priorityKeywords" not in profile:
+            priority = build_profile_priority_keywords(profile)
+            profile["priorityUniversity"] = priority["priorityUniversity"]
+            profile["priorityKeywords"] = priority["priorityKeywords"]
+
+    return profile
 
 
 def get_profile_by_email(email):
@@ -145,6 +235,12 @@ def get_profile_by_email(email):
         profile_email = get_profile_email(profile)
 
         if profile_email == email:
+            # Ensure priority fields exist even for older saved profiles
+            if isinstance(profile, dict):
+                if "priorityUniversity" not in profile or "priorityKeywords" not in profile:
+                    priority = build_profile_priority_keywords(profile)
+                    profile["priorityUniversity"] = priority["priorityUniversity"]
+                    profile["priorityKeywords"] = priority["priorityKeywords"]
             return profile
 
     return None
@@ -158,10 +254,7 @@ def delete_profile_by_email(email):
 
     data = load_profiles()
 
-    new_data = [
-        profile for profile in data
-        if get_profile_email(profile) != email
-    ]
+    new_data = [profile for profile in data if get_profile_email(profile) != email]
 
     if len(new_data) == len(data):
         return False
@@ -189,6 +282,12 @@ def cleanup_profiles():
         if not profile_has_real_data(profile):
             continue
 
+        # Ensure priority fields exist
+        if "priorityUniversity" not in profile or "priorityKeywords" not in profile:
+            priority = build_profile_priority_keywords(profile)
+            profile["priorityUniversity"] = priority["priorityUniversity"]
+            profile["priorityKeywords"] = priority["priorityKeywords"]
+
         latest_by_email[email] = profile
 
     cleaned = list(latest_by_email.values())
@@ -201,6 +300,10 @@ def cleanup_profiles():
 def build_student_context(profile):
     if not profile:
         return "No student profile available."
+
+    # show priority fields too (helps debugging + makes the LLM see them clearly)
+    priority_uni = profile.get("priorityUniversity", "") or profile.get("university", "")
+    priority_keywords = profile.get("priorityKeywords", [])
 
     return f"""
 Student Profile:
@@ -219,6 +322,10 @@ Academic Details:
 - Progress Type: {profile.get('progressType', '')}
 - Current Semester / Year: {profile.get('semester', '')}
 - Expected Graduation Year: {profile.get('gradYear', '')}
+
+TOP PRIORITY (use these first for matching):
+- Priority University: {priority_uni}
+- Priority Keywords: {", ".join(priority_keywords) if isinstance(priority_keywords, list) else str(priority_keywords)}
 
 Skills & Interests:
 - Skills: {profile.get('skills', '')}
@@ -243,4 +350,4 @@ Resume / Portfolio:
 - Resume File: {profile.get('resumeName', '')}
 
 Use this profile to personalize chatbot advice and rank opportunities.
-"""
+""".strip()

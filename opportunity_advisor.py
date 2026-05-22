@@ -74,6 +74,59 @@ def list_to_text(value):
     return str(value or "")
 
 
+def tokenize_keywords(value):
+    """
+    Accepts string or list and returns a list of keyword tokens (lowercased).
+    Used for priority matching.
+    """
+    if not value:
+        return []
+
+    if isinstance(value, list):
+        raw = [str(x).strip() for x in value if str(x).strip()]
+    else:
+        text = str(value)
+        text = text.replace("/", " ").replace(",", " ").replace(";", " ")
+        text = " ".join(text.split())
+        raw = [p.strip() for p in text.split() if len(p.strip()) > 1]
+
+    out = []
+    seen = set()
+    for x in raw:
+        k = x.lower()
+        if k and k not in seen:
+            seen.add(k)
+            out.append(k)
+    return out
+
+
+# =========================
+# PROFILE PRIORITY HELPERS
+# =========================
+def get_priority_university(profile):
+    if not profile or not isinstance(profile, dict):
+        return ""
+    return str(profile.get("priorityUniversity") or profile.get("university") or "").strip()
+
+
+def get_priority_keywords(profile):
+    """
+    Pull keywords from profile["priorityKeywords"] first (top priority),
+    otherwise fallback to building from standard fields.
+    """
+    if not profile or not isinstance(profile, dict):
+        return []
+
+    if profile.get("priorityKeywords"):
+        return tokenize_keywords(profile.get("priorityKeywords"))
+
+    # fallback (older profiles)
+    merged = []
+    for k in ["interests", "careerGoals", "skills", "degree", "lookingFor", "industry"]:
+        merged.extend(tokenize_keywords(profile.get(k)))
+    return merged
+
+
 # =========================
 # PROFILE + OPPORTUNITY HELPERS
 # =========================
@@ -93,7 +146,7 @@ def normalize_opportunity_item(item):
                 "final_score": cr.get("final_score"),
                 "personal_score": cr.get("personal_score"),
                 "final_personalized_score": cr.get("final_personalized_score"),
-                "is_opportunity": cr.get("is_opportunity")
+                "is_opportunity": cr.get("is_opportunity"),
             }
             return combined
 
@@ -131,9 +184,13 @@ def get_profile_from_forward_output(forward_output):
     return get_latest_profile()
 
 
-def build_opportunity_text(opportunity):
-    return normalize_text(
-        " ".join([
+def build_opportunity_text(opportunity, profile=None):
+    """
+    Builds a normalized text blob used for matching.
+    Updated: includes profile priority university + priority keywords prominently.
+    """
+    base = " ".join(
+        [
             str(opportunity.get("title", "")),
             str(opportunity.get("opportunity_type", "")),
             str(opportunity.get("summary", "")),
@@ -142,8 +199,21 @@ def build_opportunity_text(opportunity):
             list_to_text(opportunity.get("benefits", [])),
             list_to_text(opportunity.get("action_items", [])),
             list_to_text(opportunity.get("student_fit_reason", [])),
-        ])
+        ]
     )
+
+    extra = ""
+    if profile and isinstance(profile, dict):
+        uni = get_priority_university(profile)
+        if uni:
+            # repeated label makes it very visible both for keyword check and LLM prompt
+            extra += f" priority_university: {uni} university: {uni}"
+
+        pkw = get_priority_keywords(profile)
+        if pkw:
+            extra += " priority_keywords: " + ", ".join(pkw)
+
+    return normalize_text(base + " " + extra)
 
 
 # =========================
@@ -162,15 +232,15 @@ def extract_deadline_days(deadline_text):
     today = date.today()
 
     date_patterns = [
-        "%d %B %Y",      # 30 April 2026
-        "%d %b %Y",      # 30 Apr 2026
-        "%B %d %Y",      # April 30 2026
-        "%b %d %Y",      # Apr 30 2026
-        "%Y-%m-%d",      # 2026-04-30
-        "%d/%m/%Y",      # 30/04/2026
-        "%m/%d/%Y",      # 04/30/2026
-        "%d-%m-%Y",      # 30-04-2026
-        "%m-%d-%Y",      # 04-30-2026
+        "%d %B %Y",  # 30 April 2026
+        "%d %b %Y",  # 30 Apr 2026
+        "%B %d %Y",  # April 30 2026
+        "%b %d %Y",  # Apr 30 2026
+        "%Y-%m-%d",  # 2026-04-30
+        "%d/%m/%Y",  # 30/04/2026
+        "%m/%d/%Y",  # 04/30/2026
+        "%d-%m-%Y",  # 30-04-2026
+        "%m-%d-%Y",  # 04-30-2026
     ]
 
     cleaned = re.sub(r"[,]", "", text)
@@ -182,10 +252,9 @@ def extract_deadline_days(deadline_text):
         except Exception:
             pass
 
-    # Try to capture date-like substring from longer text
     possible_dates = re.findall(
         r"\b\d{1,2}\s+[A-Za-z]+\s+\d{4}\b|\b[A-Za-z]+\s+\d{1,2}\s+\d{4}\b|\b\d{4}-\d{1,2}-\d{1,2}\b|\b\d{1,2}[/-]\d{1,2}[/-]\d{4}\b",
-        cleaned
+        cleaned,
     )
 
     for d in possible_dates:
@@ -199,29 +268,31 @@ def extract_deadline_days(deadline_text):
     return None
 
 
-def compute_urgency_score(opportunity):
+def compute_urgency_score(opportunity, profile=None):
     deadline = opportunity.get("deadline_found", "")
     days_left = extract_deadline_days(deadline)
 
-    opportunity_text = build_opportunity_text(opportunity)
+    opportunity_text = build_opportunity_text(opportunity, profile=profile)
 
     urgency = safe_float(opportunity.get("urgency_score", 5), 5)
 
+    # Deadline sensitivity requested:
+    # - <=3 days => most urgent
+    # - 4-6 days => "this week" urgency
+    # - >=7 days => can wait
     if days_left is not None:
         if days_left < 0:
             urgency = 1
-        elif days_left <= 1:
-            urgency = 10
         elif days_left <= 3:
-            urgency = 9
-        elif days_left <= 7:
-            urgency = 8
+            urgency = 10
+        elif days_left <= 6:
+            urgency = 8.5
         elif days_left <= 14:
-            urgency = 6.5
+            urgency = 4.5
         elif days_left <= 30:
-            urgency = 5
-        else:
             urgency = 3.5
+        else:
+            urgency = 3.0
 
     urgent_words = [
         "deadline",
@@ -236,7 +307,10 @@ def compute_urgency_score(opportunity):
         "this week",
         "shortlisted",
         "interview",
-        "confirmation required"
+        "final round",
+        "application",
+        "selection process",
+        "confirmation required",
     ]
 
     for word in urgent_words:
@@ -256,7 +330,7 @@ def extract_gpa_requirement(text):
         r"gpa\s*(?:of)?\s*(?:at least|minimum|min\.?|>=|above)?\s*([0-5](?:\.\d+)?)",
         r"cgpa\s*(?:of)?\s*(?:at least|minimum|min\.?|>=|above)?\s*([0-5](?:\.\d+)?)",
         r"minimum\s*(?:gpa|cgpa)\s*[:\-]?\s*([0-5](?:\.\d+)?)",
-        r"(?:gpa|cgpa)\s*[:\-]?\s*([0-5](?:\.\d+)?)"
+        r"(?:gpa|cgpa)\s*[:\-]?\s*([0-5](?:\.\d+)?)",
     ]
 
     for pattern in patterns:
@@ -267,6 +341,20 @@ def extract_gpa_requirement(text):
     return None
 
 
+def _priority_keyword_match_count(priority_keywords, opportunity_text):
+    """
+    Counts how many priority keywords appear in opportunity_text.
+    Uses simple substring matching (consistent with rest of your logic).
+    """
+    if not priority_keywords:
+        return 0
+    count = 0
+    for kw in priority_keywords:
+        if kw and kw in opportunity_text:
+            count += 1
+    return count
+
+
 def compute_eligibility(profile, opportunity):
     if not profile:
         return {
@@ -274,10 +362,10 @@ def compute_eligibility(profile, opportunity):
             "eligibility_score": 5,
             "matched_criteria": [],
             "missing_criteria": ["No student profile available."],
-            "eligibility_notes": "Profile is missing, so eligibility can only be estimated."
+            "eligibility_notes": "Profile is missing, so eligibility can only be estimated.",
         }
 
-    opportunity_text = build_opportunity_text(opportunity)
+    opportunity_text = build_opportunity_text(opportunity, profile=profile)
 
     matched = []
     missing = []
@@ -289,7 +377,9 @@ def compute_eligibility(profile, opportunity):
         if student_gpa is not None and student_gpa >= required_gpa:
             matched.append(f"GPA requirement matched: student GPA {student_gpa} >= required {required_gpa}")
         else:
-            missing.append(f"GPA may not meet requirement: required {required_gpa}, student GPA {student_gpa or 'not provided'}")
+            missing.append(
+                f"GPA may not meet requirement: required {required_gpa}, student GPA {student_gpa or 'not provided'}"
+            )
 
     degree = normalize_text(profile.get("degree"))
     skills = normalize_text(profile.get("skills"))
@@ -300,17 +390,31 @@ def compute_eligibility(profile, opportunity):
     industry = normalize_text(profile.get("industry"))
     career_goals = normalize_text(profile.get("careerGoals"))
 
-    profile_words = []
+    # --- TOP PRIORITY matching ---
+    priority_uni = normalize_text(get_priority_university(profile))
+    priority_keywords = get_priority_keywords(profile)
 
+    if priority_uni and priority_uni in opportunity_text:
+        matched.append(f"Priority university matched in opportunity text: {get_priority_university(profile)}")
+
+    pk_count = _priority_keyword_match_count(priority_keywords, opportunity_text)
+    if pk_count > 0:
+        matched.append(f"Priority keyword matches found: {pk_count} (from profile priorityKeywords)")
+    else:
+        missing.append("No priority keyword match found (from profile interests/goals/skills/etc.).")
+
+    # --- existing keyword matching (kept) ---
+    profile_words = []
     for field in [degree, skills, interests, looking_for, mode, location, industry, career_goals]:
-        profile_words.extend([
-            w.strip()
-            for w in field.replace(",", " ").replace("/", " ").split()
-            if len(w.strip()) > 2
-        ])
+        profile_words.extend(
+            [
+                w.strip()
+                for w in field.replace(",", " ").replace("/", " ").split()
+                if len(w.strip()) > 2
+            ]
+        )
 
     keyword_matches = []
-
     for word in profile_words:
         if word in opportunity_text and word not in keyword_matches:
             keyword_matches.append(word)
@@ -340,8 +444,16 @@ def compute_eligibility(profile, opportunity):
         elif any(x in opportunity_text for x in ["location", "city", "country", "on-site", "onsite"]):
             missing.append(f"Location may not match preferred location: {profile.get('location')}")
 
+    # --- scoring: priority gets a bigger weight ---
     eligibility_score = 5
 
+    # Priority match boost (bigger than the old keyword match)
+    if priority_uni and priority_uni in opportunity_text:
+        eligibility_score += 1.5
+
+    eligibility_score += min(pk_count * 0.6, 2.5)  # up to +2.5 from priority keywords
+
+    # Original heuristic
     eligibility_score += min(len(matched) * 1.2, 4)
     eligibility_score -= min(len(missing) * 0.8, 3)
 
@@ -359,7 +471,7 @@ def compute_eligibility(profile, opportunity):
         "eligibility_score": eligibility_score,
         "matched_criteria": matched,
         "missing_criteria": missing,
-        "eligibility_notes": "Eligibility is estimated using student profile, GPA, keywords, mode, location, and opportunity text."
+        "eligibility_notes": "Eligibility is estimated using student profile, GPA, priority university/keywords, mode, location, and opportunity text.",
     }
 
 
@@ -370,7 +482,7 @@ def compute_local_fit_score(profile, opportunity):
     if not profile:
         return 5.0
 
-    opportunity_text = build_opportunity_text(opportunity)
+    opportunity_text = build_opportunity_text(opportunity, profile=profile)
 
     score = 5.0
 
@@ -383,16 +495,29 @@ def compute_local_fit_score(profile, opportunity):
     industry = normalize_text(profile.get("industry"))
     career_goals = normalize_text(profile.get("careerGoals"))
 
-    profile_text = " ".join([
-        degree,
-        skills,
-        interests,
-        looking_for,
-        mode,
-        location,
-        industry,
-        career_goals
-    ])
+    # TOP PRIORITY: university + priority keywords should move score more than normal fields
+    priority_uni = normalize_text(get_priority_university(profile))
+    priority_keywords = get_priority_keywords(profile)
+
+    if priority_uni and priority_uni in opportunity_text:
+        score += 2.0  # strong boost if the opportunity explicitly mentions their university
+
+    # Boost for priority keyword hits (bigger than normal token hits)
+    pk_hits = _priority_keyword_match_count(priority_keywords, opportunity_text)
+    score += min(pk_hits * 0.5, 3.0)  # up to +3.0
+
+    profile_text = " ".join(
+        [
+            degree,
+            skills,
+            interests,
+            looking_for,
+            mode,
+            location,
+            industry,
+            career_goals,
+        ]
+    )
 
     profile_words = [
         word.strip()
@@ -440,7 +565,7 @@ def compute_local_fit_score(profile, opportunity):
 
 
 def compute_final_rank_score(opportunity, advisor_analysis, eligibility_data, profile):
-    urgency_score = compute_urgency_score(opportunity)
+    urgency_score = compute_urgency_score(opportunity, profile=profile)
     fit_score = safe_float(advisor_analysis.get("fit_score"), compute_local_fit_score(profile, opportunity))
     eligibility_score = safe_float(advisor_analysis.get("eligibility_score"), eligibility_data.get("eligibility_score", 5))
     importance_score = safe_float(opportunity.get("importance_score"), 5)
@@ -457,12 +582,12 @@ def compute_final_rank_score(opportunity, advisor_analysis, eligibility_data, pr
         apply_bonus = -1.2
 
     final_score = (
-        urgency_score * 0.30 +
-        fit_score * 0.30 +
-        eligibility_score * 0.25 +
-        importance_score * 0.10 +
-        confidence_score * 0.05 +
-        apply_bonus
+        urgency_score * 0.30
+        + fit_score * 0.30
+        + eligibility_score * 0.25
+        + importance_score * 0.10
+        + confidence_score * 0.05
+        + apply_bonus
     )
 
     return {
@@ -471,7 +596,7 @@ def compute_final_rank_score(opportunity, advisor_analysis, eligibility_data, pr
         "eligibility_score": round(clamp(eligibility_score), 2),
         "importance_score": round(clamp(importance_score), 2),
         "confidence_score": round(clamp(confidence_score), 2),
-        "final_advisor_score": round(clamp(final_score), 2)
+        "final_advisor_score": round(clamp(final_score), 2),
     }
 
 
@@ -566,7 +691,7 @@ def call_openai(prompt):
 
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     payload = {
@@ -574,14 +699,11 @@ def call_openai(prompt):
         "messages": [
             {
                 "role": "system",
-                "content": "You are a strict student opportunity advisor. Return only valid JSON."
+                "content": "You are a strict student opportunity advisor. Return only valid JSON.",
             },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "user", "content": prompt},
         ],
-        "temperature": 0.25
+        "temperature": 0.25,
     }
 
     try:
@@ -607,7 +729,7 @@ def call_groq(prompt):
 
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
     }
 
     payload = {
@@ -615,24 +737,18 @@ def call_groq(prompt):
         "messages": [
             {
                 "role": "system",
-                "content": "You are a strict student opportunity advisor. Return only valid JSON."
+                "content": "You are a strict student opportunity advisor. Return only valid JSON.",
             },
-            {
-                "role": "user",
-                "content": prompt
-            }
+            {"role": "user", "content": prompt},
         ],
-        "temperature": 0.25
+        "temperature": 0.25,
     }
 
     try:
         res = requests.post(GROQ_URL, headers=headers, json=payload, timeout=60)
 
         if res.status_code != 200:
-            return {
-                "error": f"API error {res.status_code}",
-                "details": res.text
-            }
+            return {"error": f"API error {res.status_code}", "details": res.text}
 
         text = res.json()["choices"][0]["message"]["content"]
         parsed = extract_json_block(text)
@@ -685,12 +801,12 @@ def fallback_analysis(opportunity, eligibility_data, local_fit_score, urgency_sc
         "next_steps": [
             "Read the official eligibility criteria carefully.",
             "Prepare required documents such as CV, transcript, and statement if needed.",
-            "Apply before the deadline or verify if applications are still open."
+            "Apply before the deadline or verify if applications are still open.",
         ],
         "success_tips": [
             "Customize your CV according to this opportunity.",
-            "Highlight matching skills, projects, GPA, and career goals."
-        ]
+            "Highlight matching skills, projects, GPA, and career goals.",
+        ],
     }
 
 
@@ -714,14 +830,16 @@ def validate_analysis(analysis, fallback):
         "should_apply": fallback["should_apply"],
         "reason_for_decision": fallback["reason_for_decision"],
         "next_steps": fallback["next_steps"],
-        "success_tips": fallback["success_tips"]
+        "success_tips": fallback["success_tips"],
     }
 
     for key, value in required_keys.items():
         if key not in analysis or analysis[key] in [None, "", []]:
             analysis[key] = value
 
-    analysis["eligibility_score"] = round(clamp(safe_float(analysis.get("eligibility_score"), fallback["eligibility_score"])), 2)
+    analysis["eligibility_score"] = round(
+        clamp(safe_float(analysis.get("eligibility_score"), fallback["eligibility_score"])), 2
+    )
     analysis["fit_score"] = round(clamp(safe_float(analysis.get("fit_score"), fallback["fit_score"])), 2)
 
     if analysis.get("eligible") not in ["Yes", "Maybe", "No"]:
@@ -754,7 +872,7 @@ def analyze_opportunities(forward_output):
         return {
             "ranked_opportunities": [],
             "advisor_results": [],
-            "message": "Invalid forward_output format"
+            "message": "Invalid forward_output format",
         }
 
     ranked = forward_output.get("ranked_opportunities", [])
@@ -779,14 +897,14 @@ def analyze_opportunities(forward_output):
 
         eligibility_data = compute_eligibility(profile, combined)
         local_fit_score = compute_local_fit_score(profile, combined)
-        urgency_score = compute_urgency_score(combined)
+        urgency_score = compute_urgency_score(combined, profile=profile)
 
         prompt = build_prompt(
             opportunity=combined,
             student_context=student_context,
             eligibility_data=eligibility_data,
             local_fit_score=local_fit_score,
-            urgency_score=urgency_score
+            urgency_score=urgency_score,
         )
 
         analysis = call_openai(prompt)
@@ -799,7 +917,7 @@ def analyze_opportunities(forward_output):
             opportunity=combined,
             eligibility_data=eligibility_data,
             local_fit_score=local_fit_score,
-            urgency_score=urgency_score
+            urgency_score=urgency_score,
         )
 
         analysis = validate_analysis(analysis, fallback)
@@ -808,31 +926,29 @@ def analyze_opportunities(forward_output):
             opportunity=combined,
             advisor_analysis=analysis,
             eligibility_data=eligibility_data,
-            profile=profile
+            profile=profile,
         )
 
         analysis.update(rank_scores)
 
-        advisor_results.append({
-            "rank": idx + 1,
-            "original": combined,
-            "student_profile": profile,
-            "eligibility_precheck": eligibility_data,
-            "local_fit_score": local_fit_score,
-            "local_urgency_score": urgency_score,
-            "advisor_analysis": analysis
-        })
+        advisor_results.append(
+            {
+                "rank": idx + 1,
+                "original": combined,
+                "student_profile": profile,
+                "eligibility_precheck": eligibility_data,
+                "local_fit_score": local_fit_score,
+                "local_urgency_score": urgency_score,
+                "advisor_analysis": analysis,
+            }
+        )
 
         print("✅ Done\n")
 
-    # Re-rank based on better advisor score
     advisor_results = sorted(
         advisor_results,
-        key=lambda x: safe_float(
-            x.get("advisor_analysis", {}).get("final_advisor_score"),
-            0
-        ),
-        reverse=True
+        key=lambda x: safe_float(x.get("advisor_analysis", {}).get("final_advisor_score"), 0),
+        reverse=True,
     )
 
     for new_rank, item in enumerate(advisor_results, start=1):
@@ -844,24 +960,26 @@ def analyze_opportunities(forward_output):
         original = item.get("original", {})
         advisor_analysis = item.get("advisor_analysis", {})
 
-        reranked_opportunities.append({
-            "combined_result": {
-                "final_score": advisor_analysis.get("final_advisor_score", 0),
-                "personal_score": advisor_analysis.get("fit_score", 0),
-                "final_personalized_score": advisor_analysis.get("final_advisor_score", 0),
-                "is_opportunity": True,
-                "combined": {
-                    **original,
-                    "advisor_final_score": advisor_analysis.get("final_advisor_score", 0),
-                    "advisor_urgency_score": advisor_analysis.get("urgency_score", 0),
-                    "advisor_eligibility_score": advisor_analysis.get("eligibility_score", 0),
-                    "advisor_fit_score": advisor_analysis.get("fit_score", 0),
-                    "advisor_should_apply": advisor_analysis.get("should_apply", "Maybe"),
-                    "advisor_eligible": advisor_analysis.get("eligible", "Maybe"),
-                    "advisor_reason": advisor_analysis.get("reason_for_decision", "")
+        reranked_opportunities.append(
+            {
+                "combined_result": {
+                    "final_score": advisor_analysis.get("final_advisor_score", 0),
+                    "personal_score": advisor_analysis.get("fit_score", 0),
+                    "final_personalized_score": advisor_analysis.get("final_advisor_score", 0),
+                    "is_opportunity": True,
+                    "combined": {
+                        **original,
+                        "advisor_final_score": advisor_analysis.get("final_advisor_score", 0),
+                        "advisor_urgency_score": advisor_analysis.get("urgency_score", 0),
+                        "advisor_eligibility_score": advisor_analysis.get("eligibility_score", 0),
+                        "advisor_fit_score": advisor_analysis.get("fit_score", 0),
+                        "advisor_should_apply": advisor_analysis.get("should_apply", "Maybe"),
+                        "advisor_eligible": advisor_analysis.get("eligible", "Maybe"),
+                        "advisor_reason": advisor_analysis.get("reason_for_decision", ""),
+                    },
                 }
             }
-        })
+        )
 
     return {
         "ranked_opportunities": reranked_opportunities,
@@ -875,8 +993,8 @@ def analyze_opportunities(forward_output):
             "eligibility_weight": "25%",
             "importance_weight": "10%",
             "confidence_weight": "5%",
-            "apply_bonus": "Yes/Maybe/No adjustment"
-        }
+            "apply_bonus": "Yes/Maybe/No adjustment",
+        },
     }
 
 
@@ -889,6 +1007,7 @@ if __name__ == "__main__":
             "fullName": "Anamta",
             "email": "anamta@example.com",
             "degree": "BS Computer Science",
+            "university": "NUST",
             "gpa": "3.6",
             "semester": "5",
             "skills": "Python, Machine Learning, Web Development",
@@ -897,13 +1016,13 @@ if __name__ == "__main__":
             "mode": "Remote",
             "location": "Pakistan",
             "industry": "Technology",
-            "careerGoals": "Become an AI engineer"
+            "careerGoals": "Become an AI engineer",
         },
         "ranked_opportunities": [
             {
                 "combined_result": {
                     "combined": {
-                        "title": "AI Internship Program",
+                        "title": "AI Internship Program (NUST candidates preferred)",
                         "opportunity_type": "Internship",
                         "summary": "Remote AI internship for CS students with Python skills.",
                         "deadline_found": "30 April 2026",
@@ -913,11 +1032,11 @@ if __name__ == "__main__":
                         "urgency_score": 7,
                         "importance_score": 8,
                         "student_fit_score": 8,
-                        "confidence_score": 8
+                        "confidence_score": 8,
                     }
                 }
             }
-        ]
+        ],
     }
 
     result = analyze_opportunities(sample)

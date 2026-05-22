@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Madadgar — Premium</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='imgs/Plogo.ico') }}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+ 
+  <style>
+    :root {
+      --brand-1: #0A66C2;
+      --brand-2: #084d94;
+      --brand-3: #052a52;
+      --gold-bright: #F0C040;
+      --gold-mid:    #C8960C;
+      --gold-deep:   #8A6400;
+      --onyx:        #0f0f10;
+      --onyx-2:      #1a1a1c;
+      --text-dark:   #0b1220;
+    }
+ 
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Inter', sans-serif; background: #f0f4fb; margin: 0; }
+    .page-wrap { max-width: 72rem; margin: 0 auto; padding: 0 1.5rem 5rem; }
+ 
+    /* ── NAVBAR ── */
+    .nav-link-light { color: rgba(255,255,255,0.82); font-weight: 500; font-size:14px; text-decoration: none; transition: color .2s; }
+    .nav-link-light:hover { color: #fff; }
+    .btn-white {
+      background: rgba(255,255,255,0.10);
+      color: var(--gold-bright);
+      border: 1px solid rgba(240,192,64,0.40);
+      border-radius: 9px; padding: 7px 16px;
+      font-size: 13px; font-weight: 600;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background .2s, transform .15s;
+    }
+    .btn-white:hover { background: rgba(240,192,64,0.12); transform: translateY(-1px); }
+ 
+    /* ── HERO ── */
+    .pm-hero {
+      margin-top: 96px;
+      background: linear-gradient(140deg, #0A66C2 0%, #063a74 48%, #020d1c 100%);
+      border-radius: 24px;
+      padding: 60px 48px 50px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 24px 64px -20px rgba(2,13,28,0.55), 0 0 0 1px rgba(240,192,64,0.10) inset;
+    }
+ 
+    /* golden shimmer edge at top */
+    .pm-hero::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(240,192,64,0.6), rgba(240,192,64,0.9), rgba(240,192,64,0.6), transparent);
+    }
+ 
+    .hero-orb-gold {
+      position: absolute;
+      width: 520px; height: 520px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,150,12,0.13) 0%, transparent 65%);
+      top: -200px; right: -160px;
+      pointer-events: none;
+    }
+    .hero-orb-blue {
+      position: absolute;
+      width: 360px; height: 360px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(10,102,194,0.35) 0%, transparent 70%);
+      bottom: -140px; left: -80px;
+      pointer-events: none;
+    }
+    /* subtle dot grid */
+    .hero-dots {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+ 
+    .pm-hero-inner { position: relative; z-index: 1; }
+ 
+    .pm-hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(240,192,64,0.10);
+      border: 1px solid rgba(240,192,64,0.28);
+      border-radius: 100px;
+      padding: 6px 14px 6px 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.09em;
+      text-transform: uppercase; color: var(--gold-bright);
+      margin-bottom: 16px;
+    }
+    .eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold-bright); opacity: .8; }
+ 
+    .pm-hero h1 {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic; font-size: 50px; font-weight: 400;
+      color: #fff; margin: 0 0 14px;
+      letter-spacing: -0.02em; line-height: 1.06;
+    }
+    .pm-hero p {
+      font-size: 15px; color: rgba(255,255,255,0.62);
+      max-width: 500px; margin: 0 auto 28px; line-height: 1.7;
+    }
+ 
+    .pm-toggle {
+      display: inline-flex;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px; padding: 4px; gap: 3px;
+    }
+    .pm-toggle button {
+      font-family: 'Inter', sans-serif; background: transparent; border: none;
+      color: rgba(255,255,255,0.55); font-size: 12px; font-weight: 600;
+      padding: 8px 20px; border-radius: 9px; cursor: pointer; transition: all .2s;
+    }
+    .pm-toggle button.active { background: rgba(255,255,255,0.13); color: #fff; }
+ 
+    /* ── PLAN GRIDS ── */
+    .pm-grid   { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-top: 20px; margin-bottom: 14px; }
+    .pm-grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 28px; }
+ 
+    /* ── BASE CARD ── */
+    .pm-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 26px 22px;
+      display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+      transition: transform .22s, box-shadow .22s;
+    }
+    /* subtle top accent line */
+    .pm-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      border-radius: 20px 20px 0 0;
+      background: #e8edf5;
+    }
+    .pm-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -10px rgba(10,102,194,0.16); }
+ 
+    /* ── FEATURED CARD ── */
+    .pm-card.featured {
+      border: 1.5px solid rgba(10,102,194,0.55);
+      background: linear-gradient(170deg, #f7faff 0%, #fff 60%);
+    }
+    .pm-card.featured::before { background: linear-gradient(90deg, #0A66C2, #56a7f5, #0A66C2); }
+ 
+    /* ── GOLD / ONYX CARDS ── */
+    .pm-card.gold-card {
+      border: 1.5px solid rgba(200,150,12,0.35);
+      background: linear-gradient(165deg, #0f0f10 0%, #1a1a1c 55%, #111318 100%);
+      color: #e8dfc8;
+    }
+    .pm-card.gold-card::before {
+      background: linear-gradient(90deg, #8A6400, #F0C040, #C8960C, #F0C040, #8A6400);
+    }
+    .pm-card.gold-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 50px -12px rgba(200,150,12,0.28), 0 0 0 1px rgba(240,192,64,0.15) inset;
+    }
+ 
+    /* gold shimmer sweep animation */
+    .pm-card.gold-card .gold-shimmer {
+      position: absolute; inset: 0; border-radius: 20px;
+      background: linear-gradient(115deg, transparent 30%, rgba(240,192,64,0.04) 48%, rgba(240,192,64,0.07) 50%, rgba(240,192,64,0.04) 52%, transparent 70%);
+      background-size: 200% 100%;
+      animation: shimmer 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+ 
+    /* ── BADGES ── */
+    .pm-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; margin-bottom: 14px; }
+    .pm-badge.blue-badge { background: #e8f0fb; color: var(--brand-1); }
+    .pm-badge.gold-badge {
+      background: rgba(200,150,12,0.15);
+      color: var(--gold-bright);
+      border: 1px solid rgba(240,192,64,0.22);
+    }
+    .pm-badge.top-badge {
+      background: linear-gradient(90deg, rgba(200,150,12,0.18), rgba(200,150,12,0.08));
+      color: var(--gold-bright);
+      border: 1px solid rgba(240,192,64,0.25);
+    }
+ 
+    /* ── TYPOGRAPHY IN CARDS ── */
+    .pm-plan-name { font-size: 16px; font-weight: 700; color: var(--text-dark); margin: 0 0 4px; }
+    .pm-plan-desc { font-size: 12px; color: #64748b; margin: 0 0 18px; }
+    .gold-card .pm-plan-name { color: #f5ecd5; }
+    .gold-card .pm-plan-desc { color: rgba(220,200,160,0.55); }
+ 
+    .pm-price { font-family: 'Instrument Serif', serif; font-size: 36px; color: var(--text-dark); margin: 0 0 2px; line-height: 1; }
+    .pm-price .unit { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; color: #94a3b8; }
+    .gold-card .pm-price { color: var(--gold-bright); }
+    .gold-card .pm-price .unit { color: rgba(240,192,64,0.5); }
+ 
+    .pm-orig { font-size: 12px; color: #94a3b8; text-decoration: line-through; margin-bottom: 3px; }
+    .gold-card .pm-orig { color: rgba(220,200,160,0.35); }
+ 
+    .pm-price-sub { font-size: 11px; color: #94a3b8; margin: 3px 0 18px; }
+    .gold-card .pm-price-sub { color: rgba(220,200,160,0.4); }
+ 
+    .pm-divider { height: 1px; background: #f1f5f9; margin: 0 0 16px; }
+    .gold-card .pm-divider { background: rgba(240,192,64,0.12); }
+ 
+    /* ── FEATURES ── */
+    .pm-features { list-style: none; padding: 0; margin: 0 0 22px; flex: 1; }
+    .pm-features li {
+      font-size: 12px; color: #475569;
+      padding: 5px 0; display: flex; align-items: center; gap: 8px;
+    }
+    .gold-card .pm-features li { color: rgba(220,200,160,0.75); }
+ 
+    .chk {
+      width: 15px; height: 15px; border-radius: 50%;
+      background: #e8f0fb; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .chk svg { width: 8px; height: 6px; }
+    .chk.gold-chk { background: rgba(200,150,12,0.18); }
+ 
+    /* ── BUTTONS ── */
+    .pm-btn {
+      width: 100%; padding: 11px; border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; transition: all .2s; letter-spacing: 0.015em;
+    }
+    .pm-btn.blue {
+      background: var(--brand-1); color: #fff;
+      box-shadow: 0 4px 16px -4px rgba(10,102,194,0.4);
+    }
+    .pm-btn.blue:hover { background: var(--brand-2); transform: translateY(-1px); }
+    .pm-btn.outline {
+      background: #f8faff; color: var(--brand-1);
+      border: 1px solid #d0dff5;
+    }
+    .pm-btn.outline:hover { background: #edf3fd; transform: translateY(-1px); }
+    .pm-btn.gold-btn {
+      background: linear-gradient(135deg, #c9920a 0%, #a07000 100%);
+      color: #fff;
+      box-shadow: 0 4px 20px -4px rgba(160,112,0,0.5);
+      position: relative; overflow: hidden;
+    }
+    .pm-btn.gold-btn::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent);
+      transform: translateX(-100%);
+      transition: transform .4s ease;
+    }
+    .pm-btn.gold-btn:hover::after { transform: translateX(100%); }
+    .pm-btn.gold-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px -4px rgba(160,112,0,0.6); }
+ 
+    /* ── GOLD LINE ACCENT ── */
+    .pm-gold-line { display: flex; gap: 3px; margin-bottom: 12px; }
+    .pm-gold-line span { height: 2px; border-radius: 2px; }
+    .pm-gold-line span:nth-child(1) { width: 26px; background: var(--gold-bright); }
+    .pm-gold-line span:nth-child(2) { width: 10px; background: rgba(240,192,64,0.4); }
+    .pm-gold-line span:nth-child(3) { width: 5px;  background: rgba(240,192,64,0.18); }
+ 
+    /* ── STAR ── */
+    .pm-star { display: inline-block; width: 13px; height: 13px; margin-right: 2px; vertical-align: -2px; }
+ 
+    /* ── FOOTER ── */
+    .pm-footer-note { text-align: center; font-size: 12px; color: #94a3b8; }
+    .pm-footer-note a { color: var(--brand-1); text-decoration: none; }
+ 
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .pm-grid  { grid-template-columns: 1fr; }
+      .pm-grid-2{ grid-template-columns: 1fr; }
+      .pm-hero  { padding: 48px 24px 40px; }
+      .pm-hero h1 { font-size: 36px; }
+    }
+  </style>
+</head>
+ 
+<body>
+ 
+<!-- ══════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════ -->
+<nav id="navbar"
+     class="fixed top-0 left-0 w-full z-50 transition-all duration-300"
+     style="
+       background:
+         radial-gradient(ellipse 60% 80% at 100% 0%, rgba(45,131,217,0.40), transparent 55%),
+         radial-gradient(ellipse 70% 60% at 0% 100%, rgba(5,42,82,0.55), transparent 60%),
+         linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
+       border-bottom: 1px solid rgba(255,255,255,0.08);
+     ">
+  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+ 
+    <a href="/" class="flex items-center">
+      <img src="{{ url_for('static', filename='imgs/logow.png') }}" alt="Madadgar Logo" class="h-20 w-auto">
+    </a>
+ 
+    <div class="hidden md:flex items-center gap-8 text-sm">
+      <a href="/" class="nav-link-light">Home</a>
+      {% if user_email %}
+        <a href="/dashboard" class="nav-link-light">Dashboard</a>
+        <a href="/chatbot" class="nav-link-light">Chatbot</a>
+      {% endif %}
+      <a href="#faq"     class="nav-link-light">FAQ</a>
+      <a href="#about"   class="nav-link-light">About Us</a>
+      <a href="#contact" class="nav-link-light">Contact</a>
+    </div>
+ 
+    <div class="flex items-center gap-3">
+      <a href="/premium" class="btn-white">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1l1.8 3.6L13 5.3l-3 2.9.7 4L7 10.4l-3.7 1.8.7-4L1 5.3l4.2-.7z"/></svg>
+        Premium
+      </a>
+ 
+      <a href="{% if user_email %}/profile{% else %}/login{% endif %}"
+         class="w-9 h-9 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zM4 20a8 8 0 0116 0"
+                stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </a>
+ 
+      {% if user_email %}
+        <a href="/logout" class="hidden sm:inline text-sm nav-link-light">Logout</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+ 
+ 
+<!-- ══════════════════════════════════════
+     PAGE BODY
+══════════════════════════════════════ -->
+<div class="page-wrap">
+ 
+  <!-- HERO -->
+  <section class="pm-hero">
+    <div class="hero-orb-gold"></div>
+    <div class="hero-orb-blue"></div>
+    <div class="hero-dots"></div>
+    <div class="pm-hero-inner">
+      <div class="pm-hero-eyebrow">
+        <span class="eyebrow-dot"></span>
+        Premium Plans
+      </div>
+      <h1>Upgrade your inbox.</h1>
+      <p>Unlock AI-powered email ranking, Gmail auto-fetch, and priority support — built for serious students.</p>
+ 
+      <div class="pm-toggle" role="tablist" aria-label="Currency selector">
+        <button class="active" id="pkrBtn" onclick="setCurrency('pkr')" type="button">PKR / mo</button>
+        <button id="usdBtn"  onclick="setCurrency('usd')" type="button">USD / mo</button>
+      </div>
+    </div>
+  </section>
+ 
+ 
+  <!-- ── TIER 1: 3 STANDARD PLANS ── -->
+  <div class="pm-grid">
+ 
+    <!-- Student -->
+    <div class="pm-card">
+      <span class="pm-badge blue-badge">Starter</span>
+      <div class="pm-plan-name">Student Plan</div>
+      <div class="pm-plan-desc">Perfect for getting started</div>
+      <div class="pm-orig" id="p1-orig">1,000 PKR</div>
+      <div class="pm-price" id="p1">500 <span class="unit">PKR</span></div>
+      <div class="pm-price-sub">per month · 50% off</div>
+      <div class="pm-divider"></div>
+      <ul class="pm-features">
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Up to 10 emails / day</li>
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Basic AI ranking</li>
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Priority labels</li>
+      </ul>
+      <button class="pm-btn outline" type="button">Get Basic</button>
+    </div>
+ 
+    <!-- Standard (featured) -->
+    <div class="pm-card featured">
+      <span class="pm-badge blue-badge">Most popular</span>
+      <div class="pm-plan-name">Standard</div>
+      <div class="pm-plan-desc">Best for active students</div>
+      <div class="pm-orig" style="opacity:0;">–</div>
+      <div class="pm-price" id="p2">1,000 <span class="unit">PKR</span></div>
+      <div class="pm-price-sub">per month</div>
+      <div class="pm-divider"></div>
+      <ul class="pm-features">
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Up to 25 emails / day</li>
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Priority AI ranking</li>
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Email alerts</li>
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Chatbot access</li>
+      </ul>
+      <button class="pm-btn blue" type="button">Get Standard</button>
+    </div>
+ 
+    <!-- Advanced -->
+    <div class="pm-card">
+      <span class="pm-badge blue-badge">Power user</span>
+      <div class="pm-plan-name">Advanced</div>
+      <div class="pm-plan-desc">For heavy inbox days</div>
+      <div class="pm-orig" style="opacity:0;">–</div>
+      <div class="pm-price" id="p3">2,000 <span class="unit">PKR</span></div>
+      <div class="pm-price-sub">per month</div>
+      <div class="pm-divider"></div>
+      <ul class="pm-features">
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Unlimited emails / day</li>
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Advanced AI ranking</li>
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Auto Gmail fetch</li>
+        <li><span class="chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#0A66C2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Scam detection</li>
+      </ul>
+      <button class="pm-btn outline" type="button">Get Advanced</button>
+    </div>
+ 
+  </div><!-- /pm-grid -->
+ 
+ 
+  <!-- ── TIER 2: GOLD / ONYX PLANS ── -->
+  <div class="pm-grid-2">
+ 
+    <!-- Pro -->
+    <div class="pm-card gold-card">
+      <div class="gold-shimmer"></div>
+      <div class="pm-gold-line"><span></span><span></span><span></span></div>
+      <span class="pm-badge gold-badge">
+        <svg class="pm-star" viewBox="0 0 14 14" fill="#F0C040"><path d="M7 1l1.8 3.6L13 5.3l-3 2.9.7 4L7 10.4l-3.7 1.8.7-4L1 5.3l4.2-.7z"/></svg>
+        Pro
+      </span>
+      <div class="pm-plan-name">Pro</div>
+      <div class="pm-plan-desc">Students &amp; professionals</div>
+      <div class="pm-orig" style="opacity:0;">–</div>
+      <div class="pm-price" id="p4">3,000 <span class="unit">PKR</span></div>
+      <div class="pm-price-sub">per month</div>
+      <div class="pm-divider"></div>
+      <ul class="pm-features">
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>All Advanced features</li>
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Priority support</li>
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Custom alerts &amp; reports</li>
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Deadline calendar sync</li>
+      </ul>
+      <button class="pm-btn gold-btn" type="button">Get Pro</button>
+    </div>
+ 
+    <!-- Ultimate -->
+    <div class="pm-card gold-card">
+      <div class="gold-shimmer"></div>
+      <div class="pm-gold-line"><span></span><span></span><span></span></div>
+      <span class="pm-badge top-badge">
+        <svg class="pm-star" viewBox="0 0 14 14" fill="#F0C040"><path d="M7 1l1.8 3.6L13 5.3l-3 2.9.7 4L7 10.4l-3.7 1.8.7-4L1 5.3l4.2-.7z"/></svg>
+        <svg class="pm-star" viewBox="0 0 14 14" fill="#F0C040"><path d="M7 1l1.8 3.6L13 5.3l-3 2.9.7 4L7 10.4l-3.7 1.8.7-4L1 5.3l4.2-.7z"/></svg>
+        Ultimate
+      </span>
+      <div class="pm-plan-name">Ultimate</div>
+      <div class="pm-plan-desc">The full Madadgar experience</div>
+      <div class="pm-orig" style="opacity:0;">–</div>
+      <div class="pm-price" id="p5">5,000 <span class="unit">PKR</span></div>
+      <div class="pm-price-sub">per month</div>
+      <div class="pm-divider"></div>
+      <ul class="pm-features">
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>All Pro features</li>
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Dedicated account manager</li>
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Custom AI settings</li>
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Institution-wide access</li>
+        <li><span class="chk gold-chk"><svg viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="#C8960C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>White-glove onboarding</li>
+      </ul>
+      <button class="pm-btn gold-btn" type="button">Get Ultimate</button>
+    </div>
+ 
+  </div><!-- /pm-grid-2 -->
+ 
+  <div class="pm-footer-note">
+    Free for .edu students during beta · <a href="#">Learn more about beta access</a>
+  </div>
+ 
+</div><!-- /page-wrap -->
+ 
+ 
+<script>
+  const prices = {
+    pkr: { vals: ['500', '1,000', '2,000', '3,000', '5,000'], unit: 'PKR' },
+    usd: { vals: ['3',   '6',    '12',    '18',    '30'   ], unit: 'USD' }
+  };
+  const origPKR = ['1,000 PKR', '', '', '', ''];
+ 
+  function setCurrency(c) {
+    const { vals, unit } = prices[c];
+    ['p1','p2','p3','p4','p5'].forEach((id, i) => {
+      document.getElementById(id).innerHTML = vals[i] + ' <span class="unit">' + unit + '</span>';
+    });
+ 
+    /* show / hide Student Plan original price */
+    const orig = document.getElementById('p1-orig');
+    if (orig) orig.style.opacity = c === 'pkr' ? '1' : '0';
+ 
+    document.getElementById('pkrBtn').className = c === 'pkr' ? 'active' : '';
+    document.getElementById('usdBtn').className = c === 'usd' ? 'active' : '';
+  }
+</script>
+ 
+</body>
+</html>
