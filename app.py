@@ -257,7 +257,6 @@ def build_display_opportunities(ranked_output: Any, advisor_output: Any) -> List
     - benefits
     - reason
     """
-
     display_items = []
 
     ranked = extract_ranked_list(ranked_output)
@@ -357,18 +356,14 @@ def render_dashboard_with_data(data):
     return render_template(
         "dashboard.html",
         user_email=get_logged_in_email(),
-
         opportunities=display_opportunities,
         email_items=data.get("email_items", []),
-
         ranked_output=ranked_output,
         advisor_output=advisor_output,
-
         mode=data.get("mode", ""),
         warning=data.get("warning", ""),
         note=data.get("note", ""),
         error=data.get("error", ""),
-
         fetched_count=data.get("fetched_count", 0),
         filtered_count=data.get("filtered_count", 0),
         sent_to_ai_count=data.get("sent_to_ai_count", 0)
@@ -380,6 +375,20 @@ def render_dashboard_with_data(data):
 @app.route("/")
 def root():
     return render_template("home.html", user_email=get_logged_in_email())
+
+
+@app.route("/premium")
+def premium_page():
+    """
+    Premium subscription page.
+    Users who subscribe can automatically fetch Gmail emails
+    and have them ranked by Madadgar.
+    """
+    user_email = get_logged_in_email()
+    if not user_email:
+        return redirect(url_for("login_page"))
+
+    return render_template("premium.html", user_email=user_email)
 
 
 @app.route("/login", methods=["GET"])
@@ -444,6 +453,8 @@ def dashboard_page():
 @app.route("/chatbot")
 def chatbot_page():
     return render_template("chatbot.html", user_email=get_logged_in_email())
+
+
 @app.route("/responsive")
 def responsive_page():
     return render_template("responsive.html", user_email=get_logged_in_email())
@@ -453,12 +464,23 @@ def responsive_page():
 
 @app.route("/connect-gmail")
 def connect_gmail_route():
+    """
+    Important for correct functionality:
+    - Require user to be logged in before OAuth (so we can persist tokens per user_email).
+    """
+    if not get_logged_in_email():
+        return redirect(url_for("login_page"))
+
     from gmail_reader import connect_gmail
     return connect_gmail()
 
 
 @app.route("/gmail/callback")
 def gmail_callback():
+    """
+    OAuth callback saves tokens in gmail_reader.py (session + local token store)
+    and then redirects to /gmail-dashboard.
+    """
     from gmail_reader import gmail_callback_handler
 
     gmail_callback_handler()
@@ -467,6 +489,13 @@ def gmail_callback():
 
 @app.route("/gmail-dashboard")
 def gmail_dashboard():
+    """
+    Shows Gmail-based opportunities.
+    If Gmail is already connected (token saved locally), it will NOT ask to reconnect.
+    """
+    if not get_logged_in_email():
+        return redirect(url_for("login_page"))
+
     from gmail_reader import rank_gmail_emails
 
     data = rank_gmail_emails()
@@ -486,6 +515,9 @@ def gmail_dashboard():
 
 @app.route("/api/gmail/rank")
 def api_gmail_rank():
+    if not get_logged_in_email():
+        return jsonify({"success": False, "error": "Not logged in"}), 401
+
     from gmail_reader import rank_gmail_emails
 
     data = rank_gmail_emails()
@@ -639,36 +671,28 @@ def submit_form():
 
         profile = {
             "accountEmail": account_email,
-
             "fullName": data.get("fullName", data.get("name", "")),
             "email": data.get("email", account_email),
             "phone": data.get("phone", ""),
             "city": data.get("city", ""),
-
             "university": data.get("university", ""),
             "degree": data.get("degree", ""),
             "gpa": data.get("gpa", ""),
             "progressType": data.get("progressType", ""),
             "semester": data.get("semester", ""),
             "gradYear": data.get("gradYear", ""),
-
             "skills": data.get("skills", ""),
             "interests": data.get("interests", ""),
-
             "certifications": data.get("certifications", ""),
             "experience": data.get("experience", data.get("past_experience", "")),
-
             "lookingFor": data.get("lookingFor", data.get("preferences", "")),
             "mode": data.get("mode", ""),
             "location": data.get("location", ""),
             "industry": data.get("industry", ""),
-
             "careerGoals": data.get("careerGoals", ""),
-
             "linkedin": data.get("linkedin", ""),
             "portfolio": data.get("portfolio", ""),
             "resumeName": data.get("resumeName", ""),
-
             "financial_need": data.get("financial_need", ""),
             "preferences": data.get("preferences", ""),
             "past_experience": data.get("past_experience", "")
@@ -733,15 +757,12 @@ def process_inputs_route():
         return jsonify({
             "success": True,
             "user_email_used": user_email,
-
             "input_count": len(email_items),
             "fetched_count": len(email_items),
             "filtered_count": len(email_items),
             "sent_to_ai_count": len(email_items),
-
             "latest_profile": safe_profile_by_email(user_email),
             "edu_predictions": edu_predictions,
-
             "email_items": email_items,
             "ranked_output": ranked_output,
             "advisor_output": advisor_output,

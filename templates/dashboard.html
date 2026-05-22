@@ -26,26 +26,27 @@
   </script>
 
   <style>
-  .nav-link-light {
-    color: rgba(255, 255, 255, 0.78);
-    transition: color 0.2s ease;
-  }
+    .nav-link-light {
+      color: rgba(255, 255, 255, 0.78);
+      transition: color 0.2s ease;
+    }
 
-  .nav-link-light:hover {
-    color: white;
-  }
+    .nav-link-light:hover {
+      color: white;
+    }
 
-  .btn-white {
-    background: white;
-    color: #0A66C2;
-    transition: all 0.2s ease;
-    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.2);
-  }
+    .btn-white {
+      background: white;
+      color: #0A66C2;
+      transition: all 0.2s ease;
+      box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.2);
+    }
 
-  .btn-white:hover {
-    background: #f0f6fc;
-    transform: translateY(-1px);
-  }
+    .btn-white:hover {
+      background: #f0f6fc;
+      transform: translateY(-1px);
+    }
+
     html {
       scroll-behavior: smooth;
     }
@@ -95,62 +96,77 @@
       "error": error|default(""),
       "fetched_count": fetched_count|default(0),
       "filtered_count": filtered_count|default(0),
-      "sent_to_ai_count": sent_to_ai_count|default(0)
+      "sent_to_ai_count": sent_to_ai_count|default(0),
+      "gmail_just_connected": gmail_just_connected|default(false)
     }|tojson }}
   </script>
 
-  <!-- Navbar -->
-<nav id="navbar"
-     class="fixed top-0 left-0 w-full z-50 transition-all duration-300"
-     style="
-       background:
-         radial-gradient(ellipse 60% 80% at 100% 0%, rgba(45,131,217,0.45), transparent 55%),
-         radial-gradient(ellipse 70% 60% at 0% 100%, rgba(5,42,82,0.6), transparent 60%),
-         linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
-       border-bottom: 1px solid rgba(255,255,255,0.1);
-     ">
-
-  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-
-    <!-- Logo -->
-    <a href="/" class="flex items-center">
-      <img src="{{ url_for('static', filename='imgs/logow.png') }}"
-           alt="Madadgar Logo"
-           class="h-20 w-auto">
-    </a>
-
-    <!-- Links -->
-    <div class="hidden md:flex items-center gap-8 text-sm">
-      <a href="/" class="nav-link-light">Home</a>
-      <a href="/dashboard" class="nav-link-light font-semibold text-white">Dashboard</a>
-      <a href="/chatbot" class="nav-link-light">Chatbot</a>
+  <!-- Toast (Gmail connected successfully) -->
+  <div id="toast"
+       class="fixed top-20 right-6 z-[9999] hidden max-w-sm rounded-2xl border border-green-100 bg-green-50 px-5 py-4 text-green-800 shadow-xl">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-xl bg-white border border-green-100 flex items-center justify-center">
+        <span class="text-xl">✅</span>
+      </div>
+      <div class="min-w-0">
+        <p class="font-bold">Gmail connected successfully</p>
+        <p class="text-sm text-green-700 mt-0.5">You can now click “Fetch Emails”.</p>
+      </div>
+      <button type="button" onclick="hideToast()" class="ml-2 text-green-700/70 hover:text-green-900 font-bold">
+        ✕
+      </button>
     </div>
-
-    <!-- Right -->
-    <div class="flex items-center gap-3">
-      <!-- Profile Icon -->
-      <a href="{% if user_email %}/profile{% else %}/login{% endif %}"
-         class="w-9 h-9 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition">
-
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path d="M12 12a5 5 0 100-10 5 5 0 000 10zM4 20a8 8 0 0116 0"
-                stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-
-      </a>
-
-      <!-- Logout -->
-      <a href="/logout"
-         class="hidden sm:inline text-sm nav-link-light">
-        Logout
-      </a>
-
-    </div>
-
   </div>
-</nav>
 
- <main class="max-w-7xl mx-auto px-6 pt-28 pb-10">
+  <!-- Navbar -->
+  <nav id="navbar"
+       class="fixed top-0 left-0 w-full z-50 transition-all duration-300"
+       style="
+         background:
+           radial-gradient(ellipse 60% 80% at 100% 0%, rgba(45,131,217,0.45), transparent 55%),
+           radial-gradient(ellipse 70% 60% at 0% 100%, rgba(5,42,82,0.6), transparent 60%),
+           linear-gradient(135deg, #0A66C2 0%, #084d94 50%, #052a52 100%);
+         border-bottom: 1px solid rgba(255,255,255,0.1);
+       ">
+
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+
+      <!-- Logo -->
+      <a href="/" class="flex items-center">
+        <img src="{{ url_for('static', filename='imgs/logow.png') }}"
+             alt="Madadgar Logo"
+             class="h-20 w-auto">
+      </a>
+
+      <!-- Links -->
+      <div class="hidden md:flex items-center gap-8 text-sm">
+        <a href="/" class="nav-link-light">Home</a>
+        <a href="/dashboard" class="nav-link-light font-semibold text-white">Dashboard</a>
+        <a href="/chatbot" class="nav-link-light">Chatbot</a>
+      </div>
+
+      <!-- Right -->
+      <div class="flex items-center gap-3">
+        <!-- Profile Icon -->
+        <a href="{% if user_email %}/profile{% else %}/login{% endif %}"
+           class="w-9 h-9 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white hover:bg-white/30 transition">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 12a5 5 0 100-10 5 5 0 000 10zM4 20a8 8 0 0116 0"
+                  stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </a>
+
+        <!-- Logout -->
+        <a href="/logout" class="hidden sm:inline text-sm nav-link-light">
+          Logout
+        </a>
+
+      </div>
+
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 pt-28 pb-10">
 
     <!-- Header -->
     <section class="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
@@ -161,10 +177,19 @@
         </p>
       </div>
 
-      <a href="/connect-gmail"
-         class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-madadgar-blue text-white font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200">
-        Connect / Refresh Gmail
-      </a>
+      {% if gmail_connected %}
+        <a
+          class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-madadgar-blue text-white font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200"
+          href="/gmail-fetch">
+          Fetch Emails
+        </a>
+      {% else %}
+        <a
+          class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-madadgar-blue text-white font-semibold hover:bg-madadgar-dark transition shadow-lg shadow-blue-200"
+          href="/connect-gmail">
+          Connect Gmail
+        </a>
+      {% endif %}
     </section>
 
     <div id="dashboardGrid" class="grid lg:grid-cols-12 gap-6 items-start">
@@ -224,17 +249,6 @@
               </button>
 
             </form>
-
-            <div class="mt-6 p-4 rounded-2xl bg-blue-50 border border-blue-100">
-              <h4 class="font-bold text-madadgar-blue">Gmail Analysis</h4>
-              <p class="text-sm text-gray-600 mt-1">
-                Gmail emails are fetched, filtered locally, then only important ones are sent to AI ranking.
-              </p>
-              <a href="/connect-gmail"
-                 class="mt-3 inline-block text-sm font-semibold text-madadgar-blue hover:underline">
-                Connect Gmail →
-              </a>
-            </div>
           </section>
 
           <!-- Fetched Gmail Emails -->
@@ -384,6 +398,35 @@
     const SERVER_FETCHED_COUNT = Number(SERVER_META.fetched_count || 0);
     const SERVER_FILTERED_COUNT = Number(SERVER_META.filtered_count || 0);
     const SERVER_SENT_TO_AI_COUNT = Number(SERVER_META.sent_to_ai_count || 0);
+    const SERVER_GMAIL_JUST_CONNECTED = Boolean(SERVER_META.gmail_just_connected);
+
+    // Toast helpers
+    function showToast() {
+      const toast = document.getElementById("toast");
+      if (!toast) return;
+      toast.classList.remove("hidden");
+
+      setTimeout(() => {
+        hideToast();
+      }, 4000);
+    }
+
+    function hideToast() {
+      const toast = document.getElementById("toast");
+      if (!toast) return;
+      toast.classList.add("hidden");
+
+      // Remove connected=1 from URL so it doesn't show again on refresh
+      if (window.history && window.location.search.includes("connected=1")) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("connected");
+        window.history.replaceState({}, "", url.toString());
+      }
+    }
+
+    if (SERVER_GMAIL_JUST_CONNECTED) {
+      showToast();
+    }
 
     const form = document.getElementById("analysisForm");
     const imageInput = document.getElementById("imageInput");
@@ -535,11 +578,7 @@
     }
 
     function groupOpportunities(opportunities) {
-      const groups = {
-        today: [],
-        week: [],
-        wait: []
-      };
+      const groups = { today: [], week: [], wait: [] };
 
       cleanArray(opportunities)
         .slice()
@@ -554,21 +593,9 @@
 
     function renderTriageSummary(groups) {
       const chips = [
-        {
-          label: "Act Today",
-          value: groups.today.length,
-          classes: "bg-red-50 text-red-600 border-red-100"
-        },
-        {
-          label: "This Week",
-          value: groups.week.length,
-          classes: "bg-orange-50 text-orange-600 border-orange-100"
-        },
-        {
-          label: "Can Wait",
-          value: groups.wait.length,
-          classes: "bg-slate-50 text-slate-600 border-slate-200"
-        }
+        { label: "Act Today", value: groups.today.length, classes: "bg-red-50 text-red-600 border-red-100" },
+        { label: "This Week", value: groups.week.length, classes: "bg-orange-50 text-orange-600 border-orange-100" },
+        { label: "Can Wait", value: groups.wait.length, classes: "bg-slate-50 text-slate-600 border-slate-200" }
       ];
 
       triageSummary.classList.remove("hidden");
@@ -588,9 +615,7 @@
       const bucket = op.bucket || getUrgencyBucket(op);
       const score = Number(op.score || 0).toFixed(1);
       const subtitle = op.reason || op.summary || "No summary available.";
-      const deadlineText = op.deadline && op.deadline !== "Not mentioned"
-        ? op.deadline
-        : "No hard deadline";
+      const deadlineText = op.deadline && op.deadline !== "Not mentioned" ? op.deadline : "No hard deadline";
 
       return `
         <div class="grid grid-cols-[6px_1fr_auto] gap-4 px-5 py-5">
@@ -635,7 +660,6 @@
 
     function renderTriageSection(title, rows, sectionClass) {
       if (!rows.length) return "";
-
       return `
         <div class="border-t border-slate-200 first:border-t-0">
           <div class="px-5 py-3 ${sectionClass}">
@@ -679,6 +703,7 @@
       `;
     }
 
+    // MANUAL INPUT HANDLERS
     imageInput.addEventListener("change", () => {
       filePreview.innerHTML = "";
       const files = Array.from(imageInput.files);
@@ -845,12 +870,8 @@
       const filtered = run.filteredCount || 0;
       const sent = run.sentToAiCount || 0;
 
-      gmailInputLabel.textContent =
-        `Fetched ${fetched} · Passed ${filtered} · Sent ${sent}`;
-
-      gmailModeBadge.textContent = run.source === "manual_input"
-        ? "Manual"
-        : "Gmail";
+      gmailInputLabel.textContent = `Fetched ${fetched} · Passed ${filtered} · Sent ${sent}`;
+      gmailModeBadge.textContent = run.source === "manual_input" ? "Manual" : "Gmail";
 
       gmailInputList.classList.remove("hidden", "opacity-0");
       gmailInputList.classList.add("opacity-100");
@@ -1062,10 +1083,7 @@
       leftRail.style.minHeight = "";
       leftRailInner.style.width = "";
       leftRailInner.style.left = "";
-      leftRailInner.classList.remove(
-        "sidebar-fixed-bottom",
-        "sidebar-absolute-bottom"
-      );
+      leftRailInner.classList.remove("sidebar-fixed-bottom", "sidebar-absolute-bottom");
       leftRailInner.classList.add("sidebar-normal");
     }
 
